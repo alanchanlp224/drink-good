@@ -1,0 +1,45 @@
+{
+  "explore_vintage": {
+    "records_matched": 24,
+    "matches": [
+      {
+        "vintage": {
+          "id": 159410667,
+          "year": 2019,
+          "name": "Château Lynch-Bages Pauillac (Grand Cru Classé) 2019",
+          "statistics": {
+            "ratings_average": 4.3,
+            "ratings_count": 713
+          },
+          "wine": {
+            "id": 79262,
+            "name": "Pauillac (Grand Cru Classé)",
+            "winery": {
+              "name": "Château Lynch-Bages",
+              "seo_name": "chateau-lynch-bages"
+            }
+          }
+        }
+      },
+      {
+        "vintage": {
+          "id": 999999999,
+          "year": 2019,
+          "name": "Château Haut-Bages Libéral Pauillac (Grand Cru Classé) 2019",
+          "statistics": {
+            "ratings_average": 4.2,
+            "ratings_count": 400
+          },
+          "wine": {
+            "id": 12345,
+            "name": "Pauillac (Grand Cru Classé)",
+            "winery": {
+              "name": "Château Haut-Bages Libéral",
+              "seo_name": "chateau-haut-bages-liberal"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

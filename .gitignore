@@ -1,0 +1,8 @@
+dist/
+drink-good.zip
+node_modules/
+.playwright-browsers/
+test-results/
+.DS_Store
+*.log
+.vite/

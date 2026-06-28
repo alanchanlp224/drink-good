@@ -1,0 +1,28 @@
+{
+  "name": "drink-good",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "python3 scripts/generate-icons.py && tsc --noEmit && vite build",
+    "build:release": "python3 scripts/generate-icons.py && tsc --noEmit && vite build && node scripts/zip-dist.mjs",
+    "package": "npm run build && node scripts/zip-dist.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "npm run build && PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test",
+    "test:vivino:live": "tsx scripts/vivino-live-smoke.ts"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.2",
+    "@playwright/test": "^1.61.1",
+    "@types/chrome": "^0.0.323",
+    "@types/node": "^22.15.21",
+    "archiver": "^7.0.1",
+    "jsdom": "^29.1.1",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vitest": "^3.2.1"
+  }
+}

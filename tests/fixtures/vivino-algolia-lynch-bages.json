@@ -1,0 +1,28 @@
+{
+  "hits": [
+    {
+      "id": 79262,
+      "name": "Pauillac (Grand Cru Classé)",
+      "winery": {
+        "name": "Château Lynch-Bages",
+        "seo_name": "chateau-lynch-bages"
+      },
+      "statistics": {
+        "ratings_average": 4.4,
+        "ratings_count": 71470
+      },
+      "vintages": [
+        {
+          "id": 159410667,
+          "year": "2019",
+          "name": "Château Lynch-Bages Pauillac (Grand Cru Classé) 2019",
+          "statistics": {
+            "ratings_average": 4.3,
+            "ratings_count": 713
+          }
+        }
+      ]
+    }
+  ],
+  "nbHits": 1
+}
