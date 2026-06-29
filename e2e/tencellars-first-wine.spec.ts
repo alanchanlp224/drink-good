@@ -1,26 +1,27 @@
 /**
- * Live E2E — Wineview red wine listing, first product badge only.
- * Requires network (Wineview + Vivino) and a built extension in dist/.
+ * E2E — Ten Cellars red wine listing, first product badge only.
+ * Requires network (Ten Cellars + Vivino) and a built extension in dist/.
  */
 
 import { expect, test } from "./fixtures";
 
-const WINVIEW_RED_WINE_URL =
-  "https://wineview.com.hk/product-category/wine-shop/red-wine/";
+const TEN_CELLARS_URL = "https://www.tencellars.hk/red-wines.html";
 
 const TRIGGER = "#drink-good-trigger";
 const BADGE = "[data-drink-good-badge]";
 const MATCHED_OR_UNKNOWN =
   /drink-good-badge--(excellent|fair|low|unknown)/;
 
-test.describe("Wineview first wine", () => {
+test.describe("Ten Cellars first wine", () => {
   test("loads extension, processes first wine, shows Vivino badge", async ({
     context,
   }) => {
     const page = await context.newPage();
 
-    await page.goto(WINVIEW_RED_WINE_URL, { waitUntil: "domcontentloaded" });
-    await expect(page.locator("li.product").first()).toBeVisible();
+    await page.goto(TEN_CELLARS_URL, { waitUntil: "domcontentloaded" });
+    await expect(page.locator(".wine-list .info").first()).toBeVisible({
+      timeout: 30_000,
+    });
     await expect(page.locator(TRIGGER)).toBeVisible();
 
     await page.evaluate(() => {

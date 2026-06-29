@@ -40,4 +40,11 @@ describe("wineviewAdapter", () => {
     expect(query.searchText).not.toMatch(/sale/i);
     expect(query.vintage).toBe(2016);
   });
+
+  it("does not strip parenthetical text (retailer-specific rules)", () => {
+    const query = wineviewAdapter.normalizeTitle(
+      "Chateau Lynch Bages 2019 (Grand Cru Classé)",
+    );
+    expect(query.searchText).toMatch(/\(Grand Cru/i);
+  });
 });

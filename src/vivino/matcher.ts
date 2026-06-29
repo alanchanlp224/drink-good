@@ -1,6 +1,6 @@
 /** B+C match strategy: vintage gate + name-similarity confidence. */
 
-import { nameSimilarity, stripVintage } from "./similarity.js";
+import { nameSimilarity, normalizeForMatch } from "./similarity.js";
 import type {
   NormalizedQuery,
   VivinoMatchResult,
@@ -15,7 +15,7 @@ export function buildNormalizedQuery(rawTitle: string): NormalizedQuery {
   const rawNormalized = rawTitle.trim().replace(/\s+/g, " ");
   const vintage =
     rawNormalized.match(/\b(19|20)\d{2}\b/)?.[0] ?? null;
-  const searchText = stripVintage(rawNormalized);
+  const searchText = normalizeForMatch(rawNormalized);
 
   return {
     searchText,

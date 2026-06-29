@@ -9,11 +9,20 @@ export class PageProcessor {
   private running = false;
   private observer: MutationObserver | null = null;
   private activeChain: Promise<void> = Promise.resolve();
+  private readonly stateListeners = new Set<() => void>();
 
   constructor(
     private readonly adapter: RetailerAdapter,
     private readonly maxProducts = Number.POSITIVE_INFINITY,
   ) {}
+
+  /** Subscribe to running/stopped transitions (e.g. floating button UI). */
+  onStateChange(listener: () => void): () => void {
+    this.stateListeners.add(listener);
+    return () => {
+      this.stateListeners.delete(listener);
+    };
+  }
 
   /** Optional E2E cap via `data-drink-good-max-products` on `<html>`. */
   private resolveMaxProducts(): number {
@@ -35,7 +44,9 @@ export class PageProcessor {
     if (this.running) {
       return;
     }
+    await sendBackgroundRequest({ type: "BEGIN_RUN" });
     this.running = true;
+    this.notifyStateChange();
     await this.log("info", `Started processing on ${this.adapter.displayName}`);
     await this.setProcessingState("running", 0, 0);
     this.startObserver();
@@ -43,13 +54,7 @@ export class PageProcessor {
   }
 
   async stop(): Promise<void> {
-    if (!this.running) {
-      return;
-    }
-    this.running = false;
-    this.stopObserver();
-    await this.log("info", "Processing stopped by user");
-    await this.setProcessingState("stopped", 0, 0);
+    await this.finishProcessing("Processing stopped by user");
   }
 
   async toggle(): Promise<void> {
@@ -60,14 +65,32 @@ export class PageProcessor {
     }
   }
 
+  private async finishProcessing(reason: string): Promise<void> {
+    if (!this.running) {
+      return;
+    }
+    this.running = false;
+    this.stopObserver();
+    this.notifyStateChange();
+    await this.log("info", reason);
+    await this.setProcessingState("stopped", 0, 0);
+  }
+
+  private notifyStateChange(): void {
+    for (const listener of this.stateListeners) {
+      listener();
+    }
+  }
+
   private startObserver(): void {
     if (this.observer) {
       return;
     }
 
     const target =
-      document.querySelector("ul.products, .products, main, #content") ??
-      document.body;
+      document.querySelector(
+        "ul.products, .products, main, #content, app-root, mat-table, .data.desktop, ww-product-list, cx-product-list, cx-storefront, .ProductList-list, .ProductList-content, .adminProductList, .product-container, .wine-list, .wine-showcase",
+      ) ?? document.body;
 
     this.observer = new MutationObserver(() => {
       if (!this.running || shouldSuppressMutationHandling()) {
@@ -88,17 +111,24 @@ export class PageProcessor {
     this.activeChain = this.activeChain.then(() => this.processVisible());
   }
 
+  private listPendingProducts(): ProductCandidate[] {
+    return this.adapter
+      .extractProducts()
+      .filter((product) => !hasBadge(product.element, this.adapter.badge))
+      .slice(0, this.resolveMaxProducts());
+  }
+
   private async processVisible(): Promise<void> {
     if (!this.running) {
       return;
     }
 
-    const products = this.adapter
-      .extractProducts()
-      .filter((product) => !hasBadge(product.element, this.adapter.badge))
-      .slice(0, this.resolveMaxProducts());
+    const products = this.listPendingProducts();
 
     if (products.length === 0) {
+      await this.finishProcessing(
+        "Finished — no unprocessed products on this page",
+      );
       return;
     }
 
@@ -122,6 +152,28 @@ export class PageProcessor {
       processed += 1;
       await this.setProcessingState("running", processed, total);
     }
+
+    if (!this.running) {
+      return;
+    }
+
+    const remaining = this.listPendingProducts();
+    const maxProducts = this.resolveMaxProducts();
+    const hitRunCap =
+      Number.isFinite(maxProducts) && processed >= maxProducts && total >= maxProducts;
+
+    if (remaining.length === 0) {
+      await this.finishProcessing(
+        "Finished — all visible products on this page processed",
+      );
+      return;
+    }
+
+    if (hitRunCap) {
+      await this.finishProcessing(
+        `Finished — processed ${processed} product(s) this run`,
+      );
+    }
   }
 
   private async processProduct(product: ProductCandidate): Promise<void> {
@@ -133,7 +185,7 @@ export class PageProcessor {
 
     const response = await sendBackgroundRequest({
       type: "VIVINO_SEARCH",
-      wineTitle: product.rawTitle,
+      wineTitle: normalized.rawNormalized,
       adapterId: this.adapter.id,
     });
 

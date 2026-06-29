@@ -2,7 +2,8 @@
 
 Chrome extension (MV3) that overlays **Vivino scores and matched wine names** on wine retailer product listings.
 
-**MVP retailer:** [Wineview HK](https://wineview.com.hk/) (`wineview.com.hk/*`)
+**MVP retailer:** [Wineview HK](https://wineview.com.hk/) (`wineview.com.hk/*`)  
+**Beta retailers:** [Cru World Wine Markets](https://markets.cruworldwine.com/) · [Watson's Wine](https://www.watsonswine.com/) · [RNG Wine](https://www.rngwine.com/) · [Remfly](https://remfly.com.hk/) · [Ten Cellars](https://www.tencellars.hk/) (`tencellars.hk/*`)
 
 ## Development
 
@@ -10,8 +11,8 @@ Chrome extension (MV3) that overlays **Vivino scores and matched wine names** on
 npm install
 npm run build           # production build → dist/
 npm run dev             # watch mode for extension development
-npm test                # unit tests (31 tests)
-npm run test:e2e        # Playwright E2E — extension + Wineview first wine (live Vivino)
+npm test                # unit tests
+npm run test:e2e        # Playwright E2E — Wineview + Cru + Watson's + RNG + Remfly + Ten Cellars (live Vivino)
 npm run test:vivino:live  # live Vivino API smoke test
 ```
 
@@ -72,9 +73,16 @@ GitHub Actions builds `drink-good.zip` and attaches it to the release. Local pac
 npm run test:e2e
 ```
 
-Loads the built extension in Chromium, opens the [Wineview red wine listing](https://wineview.com.hk/product-category/wine-shop/red-wine/), starts the floating trigger, waits for the **first** product badge (live Vivino lookup), then stops. Asserts a score badge (`excellent` / `fair` / `low`) or grey `unknown` badge.
+Loads the built extension in Chromium, opens retailer pages, starts the floating trigger, waits for the **first** product badge (live Vivino lookup), then stops.
 
-Requires network access to Wineview and Vivino. Runs serially with a 90s lookup timeout. The test sets `data-drink-good-max-products="1"` on the page so only the first listing is processed.
+- **Wineview:** [red wine listing](https://wineview.com.hk/product-category/wine-shop/red-wine/)
+- **Cru Markets:** [HK store](https://markets.cruworldwine.com/hk) — injects Spartacus-style fixture (API blocks headless)
+- **Watson's Wine:** [category listing](https://www.watsonswine.com/en/c/10010231) — injects `ww-product-tile` fixture (Akamai blocks headless)
+- **RNG Wine:** [Bordeaux red](https://www.rngwine.com/categories/red-wine-bordeaux) — injects Shopline `product-item` fixture
+- **Remfly:** [promotions](https://remfly.com.hk/product/promotion/p?pf=all) — injects `product-cardcontainer` fixture
+- **Ten Cellars:** [red wines](https://www.tencellars.hk/red-wines.html) — injects `.info` listing fixture
+
+Requires network access to the retailer and Vivino. Runs serially with a 90s lookup timeout. Tests set `data-drink-good-max-products="1"` so only the first listing is processed.
 
 ## How it works
 
@@ -145,5 +153,8 @@ e2e/
 |-------|--------|-------------|
 | ALA-76 | [Done](https://linear.app/alan-chan/issue/ALA-76/add-live-e2e-test-for-wineview-first-wine-only) | Playwright E2E — first wine on Wineview |
 | ALA-77 | [Done](https://linear.app/alan-chan/issue/ALA-77/github-releases-pipeline-and-update-scripts) | GitHub Releases + update scripts |
-| ALA-78 | Backlog (Beta) | Cru World Wine Markets adapter |
+| ALA-78 | [Done](https://linear.app/alan-chan/issue/ALA-78/cru-world-wine-markets-adapter) | Cru World Wine Markets adapter |
+| ALA-81 | [Done](https://linear.app/alan-chan/issue/ALA-81/implement-watsons-wine-retailer-adapter) | Watson's Wine adapter (Spartacus) |
+| ALA-82 | [Done](https://linear.app/alan-chan/issue/ALA-82/implement-rng-wine-retailer-adapter) | RNG Wine adapter (Shopline) |
+| ALA-83 | [Done](https://linear.app/alan-chan/issue/ALA-83/implement-remfly-retailer-adapter) | Remfly adapter |
 | ALA-79 | [Done](https://linear.app/alan-chan/issue/ALA-79/badge-ui-polish-and-per-site-display-config) | Badge UI polish + per-site display (manual QA passed) |

@@ -57,11 +57,8 @@ async function checkForUpdate(): Promise<string | null> {
   releaseCheckPromise = (async () => {
     try {
       const latest = await checkForNewerRelease(EXTENSION_VERSION);
-      if (latest) {
-        cachedLatestRelease = latest;
-        return latest;
-      }
-      return null;
+      cachedLatestRelease = latest;
+      return latest;
     } catch {
       return null;
     } finally {
@@ -121,6 +118,11 @@ async function handleRequest(
       logger.clear();
       logger.info("Log cleared by user");
       return { type: "LOGS_CLEARED", lineCount: 0 };
+    }
+
+    case "BEGIN_RUN": {
+      logger.clear();
+      return { type: "PONG" };
     }
 
     case "VIVINO_SEARCH": {

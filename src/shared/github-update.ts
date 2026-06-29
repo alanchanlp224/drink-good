@@ -114,10 +114,15 @@ export async function checkForNewerRelease(
   currentVersion: string,
   repo: string = GITHUB_REPO,
 ): Promise<string | null> {
-  const latest = await fetchLatestRelease(repo);
-  if (!latest) {
+  if (!parseSemverCore(currentVersion)) {
     return null;
   }
+
+  const latest = await fetchLatestRelease(repo);
+  if (!latest || !parseSemverCore(latest.version)) {
+    return null;
+  }
+
   return compareSemver(latest.version, currentVersion) > 0
     ? latest.version
     : null;

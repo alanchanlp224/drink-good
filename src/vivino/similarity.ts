@@ -28,6 +28,63 @@ export function stripVintage(value: string): string {
   return value.replace(VINTAGE_PATTERN, " ").replace(/\s+/g, " ").trim();
 }
 
+const NON_VINTAGE_PATTERN = /\bN\.?\s*V\.?\b|\bnon[-\s]?vintage\b/gi;
+
+/** Strip shop non-vintage markers (NV, N.V., non-vintage). */
+export function stripNonVintageMarkers(value: string): string {
+  return value
+    .replace(NON_VINTAGE_PATTERN, " ")
+    .replace(/\s+([.,;:])/g, "$1")
+    .replace(/[.,;:]+\s*$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Strip gift/packaging suffixes that shops add but Vivino omits. */
+export function stripPackagingMarkers(value: string): string {
+  const accessoryItems =
+    "flutes?|glasses?|coupes?|champagne\\s+flutes?|wine\\s+glasses?";
+  const giftBox = "gift\\s*box(?:es)?";
+
+  return value
+    .replace(new RegExp(`\\s*\\(\\s*(?:with\\s+)?${giftBox}\\s*\\)\\s*`, "gi"), " ")
+    .replace(/\s*\(\s*gift\s*set\s*\)\s*/gi, " ")
+    .replace(
+      new RegExp(`\\bset\\s+with\\s+\\d+\\s+(?:${accessoryItems})\\b`, "gi"),
+      " ",
+    )
+    .replace(
+      new RegExp(`\\bwith\\s+\\d+\\s+(?:${accessoryItems})\\b`, "gi"),
+      " ",
+    )
+    .replace(/\s+with\s+gift\s*box(?:es)?\s*$/gi, "")
+    .replace(/\s+gift\s*set\s*$/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Strip redundant colour words when the cuvée name already implies style.
+ * e.g. "Rose Oeil de Perdrix" → "Oeil de Perdrix" (rosé is implicit).
+ */
+export function stripRedundantColorTokens(value: string): string {
+  const normalized = normalizeText(value);
+  if (!normalized.includes("oeil") || !normalized.includes("perdrix")) {
+    return value;
+  }
+  return value
+    .replace(/\bros[eé]s?\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Normalize shop + Vivino titles before token similarity or search. */
+export function normalizeForMatch(value: string): string {
+  return stripRedundantColorTokens(
+    stripPackagingMarkers(stripNonVintageMarkers(stripVintage(value))),
+  );
+}
+
 const STOP_TOKENS = new Set([
   "de",
   "du",
@@ -53,8 +110,8 @@ function tokenize(value: string): string[] {
  * Handles "Chateau Lynch Bages" vs "Château Lynch-Bages Pauillac (Grand Cru Classé)".
  */
 export function nameSimilarity(query: string, candidate: string): number {
-  const queryNorm = normalizeText(stripVintage(query));
-  const candidateNorm = normalizeText(stripVintage(candidate));
+  const queryNorm = normalizeText(normalizeForMatch(query));
+  const candidateNorm = normalizeText(normalizeForMatch(candidate));
 
   if (!queryNorm || !candidateNorm) {
     return 0;

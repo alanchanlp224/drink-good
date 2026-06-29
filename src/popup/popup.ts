@@ -1,4 +1,5 @@
 import { GITHUB_REPO } from "../shared/config";
+import { compareSemver, parseSemverCore } from "../shared/github-update";
 import { sendBackgroundRequest } from "../shared/runtime";
 
 const versionEl = document.querySelector<HTMLElement>("#version");
@@ -61,12 +62,20 @@ async function refreshStatus(): Promise<void> {
   }
 
   if (updateBannerEl && updateLinkEl) {
-    if (status.updateAvailable && GITHUB_REPO) {
+    const releaseVersion = status.updateAvailable;
+    const hasNewerRelease =
+      releaseVersion &&
+      GITHUB_REPO &&
+      parseSemverCore(releaseVersion) &&
+      compareSemver(releaseVersion, status.version) > 0;
+    if (hasNewerRelease) {
       updateBannerEl.hidden = false;
-      updateLinkEl.textContent = `v${status.updateAvailable}`;
+      updateLinkEl.textContent = `v${releaseVersion}`;
       updateLinkEl.href = `https://github.com/${GITHUB_REPO}/releases/latest`;
     } else {
       updateBannerEl.hidden = true;
+      updateLinkEl.textContent = "";
+      updateLinkEl.removeAttribute("href");
     }
   }
 }

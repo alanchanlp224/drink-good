@@ -24,6 +24,7 @@ export type BackgroundRequest =
   | { type: "LOG"; level: LogLevel; message: string }
   | { type: "GET_LOGS" }
   | { type: "CLEAR_LOGS" }
+  | { type: "BEGIN_RUN" }
   | { type: "PING" };
 
 export type BackgroundResponse =

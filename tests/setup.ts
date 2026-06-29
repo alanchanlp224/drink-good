@@ -4,7 +4,7 @@ const storage: Record<string, unknown> = {};
 
 vi.stubGlobal("chrome", {
   runtime: {
-    getManifest: () => ({ version: "0.0.1" }),
+    getManifest: () => ({ version: "0.0.2" }),
     onMessage: {
       addListener: vi.fn(),
     },

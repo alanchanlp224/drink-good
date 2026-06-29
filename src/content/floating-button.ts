@@ -79,6 +79,9 @@ export function mountFloatingButton(processor: PageProcessor): HTMLElement {
   });
 
   document.body.appendChild(wrapper);
+  processor.onStateChange(() => {
+    syncTriggerState(wrapper, processor.isRunning());
+  });
   syncTriggerState(wrapper, processor.isRunning());
   return wrapper;
 }

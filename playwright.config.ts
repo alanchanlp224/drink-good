@@ -11,5 +11,7 @@ export default defineConfig({
   reporter: [["list"]],
   use: {
     trace: "retain-on-failure",
+    // Cru (and similar SPAs) switch layout at 960px — use desktop web by default.
+    viewport: { width: 1280, height: 800 },
   },
 });

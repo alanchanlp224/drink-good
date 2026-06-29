@@ -1,6 +1,6 @@
 {
   "name": "drink-good",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "npm run build && PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test",
-    "test:vivino:live": "tsx scripts/vivino-live-smoke.ts"
+    "test:vivino:live": "tsx scripts/vivino-live-smoke.ts",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.2",
@@ -19,6 +20,7 @@
     "@types/chrome": "^0.0.323",
     "@types/node": "^22.15.21",
     "archiver": "^7.0.1",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",

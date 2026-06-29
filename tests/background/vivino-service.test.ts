@@ -100,4 +100,18 @@ describe("handleRequest", () => {
     const cleared = await handleRequest({ type: "CLEAR_LOGS" }, {});
     expect(cleared.type).toBe("LOGS_CLEARED");
   });
+
+  it("clears logs silently at the start of a new run", async () => {
+    await handleRequest(
+      { type: "LOG", level: "info", message: "previous run" },
+      {},
+    );
+    await handleRequest({ type: "BEGIN_RUN" }, {});
+    const logs = await handleRequest({ type: "GET_LOGS" }, {});
+    expect(logs.type).toBe("LOGS");
+    if (logs.type === "LOGS") {
+      expect(logs.text).not.toContain("previous run");
+      expect(logs.lineCount).toBe(0);
+    }
+  });
 });

@@ -31,32 +31,37 @@ export async function enrichCandidateStats(
   }
 
   const baseUrl = options.baseUrl ?? "https://www.vivino.com";
-  const data = await fetchJson<VintageResponse>(
-    `${baseUrl}/api/vintages/${candidate.vintageId}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        "User-Agent": options.userAgent ?? "",
+  try {
+    const data = await fetchJson<VintageResponse>(
+      `${baseUrl}/api/vintages/${candidate.vintageId}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "User-Agent": options.userAgent ?? "",
+        },
       },
-    },
-    {
-      fetchFn: options.fetchFn,
-      rateLimiter: options.rateLimiter,
-      maxRetries: options.maxRetries,
-    },
-  );
+      {
+        fetchFn: options.fetchFn,
+        rateLimiter: options.rateLimiter,
+        maxRetries: options.maxRetries,
+      },
+    );
 
-  const stats = data.vintage?.statistics;
-  if (!stats?.ratings_average) {
+    const stats = data.vintage?.statistics;
+    if (!stats?.ratings_average) {
+      return candidate;
+    }
+
+    return {
+      ...candidate,
+      stats: {
+        ratingsAverage: stats.ratings_average,
+        ratingsCount: stats.ratings_count ?? candidate.stats.ratingsCount,
+      },
+    };
+  } catch {
+    // Vivino may block vintage detail fetches; keep Algolia/explore stats.
     return candidate;
   }
-
-  return {
-    ...candidate,
-    stats: {
-      ratingsAverage: stats.ratings_average,
-      ratingsCount: stats.ratings_count ?? candidate.stats.ratingsCount,
-    },
-  };
 }
