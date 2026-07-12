@@ -22,4 +22,9 @@ describe("github-update", () => {
   it("uses drink-good zip asset name", () => {
     expect(RELEASE_ZIP_NAME).toBe("drink-good.zip");
   });
+
+  it("treats equal release and installed versions as no update", () => {
+    expect(compareSemver("0.0.3", "0.0.3")).toBe(0);
+    expect(compareSemver("v0.0.3", "0.0.3")).toBe(0);
+  });
 });

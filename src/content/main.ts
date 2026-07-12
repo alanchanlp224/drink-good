@@ -15,7 +15,7 @@ function init(): void {
   document.documentElement.dataset.drinkGoodAdapter = adapter.id;
 
   const processor = new PageProcessor(adapter);
-  mountFloatingButton(processor);
+  mountFloatingButton(processor, adapter.floatingTrigger);
 }
 
 if (document.readyState === "loading") {

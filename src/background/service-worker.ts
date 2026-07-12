@@ -60,6 +60,7 @@ async function checkForUpdate(): Promise<string | null> {
       cachedLatestRelease = latest;
       return latest;
     } catch {
+      cachedLatestRelease = null;
       return null;
     } finally {
       releaseCheckPromise = null;

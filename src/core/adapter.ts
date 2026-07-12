@@ -12,6 +12,17 @@ export interface ProductCandidate {
   element: Element;
 }
 
+export interface FloatingTriggerOptions {
+  /** Distance from viewport bottom in px (default 24). */
+  bottomPx?: number;
+  /** Distance from viewport right in px (default 24). */
+  rightPx?: number;
+  /** Measure this element at runtime and sit the FAB above it. */
+  stackAboveSelector?: string;
+  /** Gap between FAB bottom edge and obstacle top (default 16). */
+  stackGapPx?: number;
+}
+
 export interface RetailerAdapter {
   id: string;
   displayName: string;
@@ -21,4 +32,6 @@ export interface RetailerAdapter {
   normalizeTitle(rawTitle: string): NormalizedQuery;
   /** Per-site badge placement and styling. */
   badge: BadgeAdapter;
+  /** Optional FAB offset when site widgets overlap the default corner. */
+  floatingTrigger?: FloatingTriggerOptions;
 }

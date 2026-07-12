@@ -1,108 +1,185 @@
 # Drink Good
 
-Chrome extension (MV3) that overlays **Vivino scores and matched wine names** on wine retailer product listings.
+Chrome extension (Manifest V3) that overlays **Vivino scores and matched wine names** on wine retailer product listings.
 
-**MVP retailer:** [Wineview HK](https://wineview.com.hk/) (`wineview.com.hk/*`)  
-**Beta retailers:** [Cru World Wine Markets](https://markets.cruworldwine.com/) · [Watson's Wine](https://www.watsonswine.com/) · [RNG Wine](https://www.rngwine.com/) · [Remfly](https://remfly.com.hk/) · [Ten Cellars](https://www.tencellars.hk/) (`tencellars.hk/*`)
+**Version:** 0.0.4
 
-## Development
+## Supported wine shops
 
-```bash
-npm install
-npm run build           # production build → dist/
-npm run dev             # watch mode for extension development
-npm test                # unit tests
-npm run test:e2e        # Playwright E2E — Wineview + Cru + Watson's + RNG + Remfly + Ten Cellars (live Vivino)
-npm run test:vivino:live  # live Vivino API smoke test
-```
+| Shop | Website |
+|------|---------|
+| Wineview HK | [wineview.com.hk](https://wineview.com.hk/) |
+| Cru World Wine Markets | [markets.cruworldwine.com](https://markets.cruworldwine.com/) |
+| Watson's Wine | [watsonswine.com](https://www.watsonswine.com/) |
+| RNG Wine | [rngwine.com](https://www.rngwine.com/) |
+| Remfly | [remfly.com.hk](https://remfly.com.hk/) |
+| Ten Cellars | [tencellars.hk](https://www.tencellars.hk/) |
+| XtraWine | [xtrawine.com](https://www.xtrawine.com/) |
+| King's Wine Cellar | [kingswine.hk](https://kingswine.hk/) |
 
-## Load unpacked (Chrome)
+Open any supported shop in Chrome, click the **burgundy wine-glass button** (bottom-right corner), and Vivino badges appear on each product. Click a badge to open the matched wine on Vivino. Click the button again to stop scanning.
 
-### From source (developers)
+---
 
-1. Run `npm run build`
-2. Open `chrome://extensions`
-3. Enable **Developer mode**
-4. **Load unpacked** → select the `dist/` folder
-5. Visit [Wineview red wine](https://wineview.com.hk/product-category/wine-shop/red-wine/)
-6. Click the **burgundy wine-glass button** (bottom-right) to start Vivino lookups
-7. Click again to stop; badges appear on each product card
-8. Open the extension **popup** → **Debug** for log download / cache clear
+## Install Drink Good (Chrome)
 
-After code changes, rebuild and click **Reload** on `chrome://extensions`.
+You do **not** need to write code or install Node.js. These steps assume you have **Google Chrome** installed and have never loaded an extension before.
 
-### From GitHub release (no Node required)
+### Step 1 — Download the extension from GitHub
 
-1. Download `drink-good.zip` from the [latest release](https://github.com/alanchanlp224/drink-good/releases/latest)
-2. Unzip to a permanent folder (e.g. `~/Extensions/drink-good` on Mac, `C:\Extensions\drink-good` on Windows)
-3. Open `chrome://extensions` → **Developer mode** → **Load unpacked** → select that folder
+1. Open the Drink Good releases page:  
+   **https://github.com/alanchanlp224/drink-good/releases**
+2. At the top of the list, click the **latest release** (for example **v0.0.4**).  
+   Do **not** download the source code (Source code zip/tar.gz) — that is for developers only.
+3. Scroll down to the **Assets** section.
+4. Click **`drink-good.zip`** to download it.  
+   If you do not see Assets, click the small triangle or “Assets” label to expand it.
 
-## Updating the extension
+The file saves to your **Downloads** folder (unless your browser asks you to pick another location).
 
-When a new version is published, the extension **popup** shows an **Update available** banner linking to the release.
+### Step 2 — Unzip and keep the folder in a permanent place
 
-### macOS
+Chrome needs a **folder on disk** that contains `manifest.json`. Keep this folder somewhere permanent — if you delete it, the extension stops working.
+
+#### macOS
+
+1. Open **Finder** → **Downloads**.
+2. Double-click **`drink-good.zip`** to unzip it.
+3. You should see a folder (often named **`drink-good`**) containing files such as `manifest.json`, `public/`, and `assets/`.
+4. **Move** that folder to a permanent location, for example:
+   - `~/Extensions/drink-good`  
+   (In Finder: **Go** → **Home**, create an **Extensions** folder if needed, drag the unzipped folder there.)
+
+**Tip:** The folder you will select in Chrome must contain **`manifest.json`** at its top level — not a parent folder that only holds another subfolder.
+
+#### Windows
+
+1. Open **File Explorer** → **Downloads**.
+2. Right-click **`drink-good.zip`** → **Extract All…**
+3. Choose a permanent folder, for example:
+   - `C:\Extensions\drink-good`
+4. Click **Extract**.
+5. Confirm the extracted folder contains **`manifest.json`** (along with `public`, `assets`, etc.).
+
+### Step 3 — Turn on Developer mode in Chrome
+
+1. Open a new Chrome tab and go to: **`chrome://extensions`**  
+   (Copy and paste that into the address bar and press Enter.)
+2. In the **top-right corner**, switch **Developer mode** to **On**.
+
+You should see buttons such as **Load unpacked**, **Pack extension**, and **Update**.
+
+### Step 4 — Load the extension
+
+1. Click **Load unpacked**.
+2. In the file picker, select the **folder** from Step 2 — the one that contains **`manifest.json`**.
+   - **macOS example:** `Users/yourname/Extensions/drink-good`
+   - **Windows example:** `C:\Extensions\drink-good`
+3. Click **Select Folder** (Windows) or **Open** (macOS).
+
+**Drink Good** should now appear in your extensions list with a wine-glass icon.
+
+### Step 5 — Pin the extension (recommended)
+
+1. Click the **puzzle piece** icon in Chrome’s toolbar (Extensions menu).
+2. Find **Drink Good** and click the **pin** icon so it stays visible.
+
+### Step 6 — Try it on a wine shop
+
+1. Visit a supported site, for example:  
+   [Wineview red wine](https://wineview.com.hk/product-category/wine-shop/red-wine/)  
+   or [King's Wine Bordeaux](https://kingswine.hk/collections/bordeaux)
+2. Click the **burgundy wine-glass button** at the bottom-right of the page.
+3. Wait a few seconds — Vivino score badges appear on product cards.
+4. Click the wine-glass button again to stop scanning.
+
+Open the extension **popup** (click the pinned icon) to see version, status, and debug tools.
+
+---
+
+## Updating to a newer version
+
+When a newer release is published, the extension **popup** shows an **Update available** banner with a link to GitHub.
+
+### Option A — Download again (simplest)
+
+1. Download the new **`drink-good.zip`** from [Releases](https://github.com/alanchanlp224/drink-good/releases/latest) (same steps as install).
+2. Delete the **old files** inside your extension folder (or replace the whole folder).
+3. Unzip the new zip into the **same folder path** you used for **Load unpacked**.
+4. Go to **`chrome://extensions`** and click **Reload** on Drink Good.
+
+### Option B — Update script
+
+If you kept the downloaded repo or clone, you can run:
+
+**macOS (Terminal):**
 
 ```bash
 chmod +x scripts/update.sh
 ./scripts/update.sh "$HOME/Extensions/drink-good"
 ```
 
-Replace the path with the folder you used for **Load unpacked**.
-
-### Windows (PowerShell)
+**Windows (PowerShell):**
 
 ```powershell
 .\scripts\update.ps1 "C:\Extensions\drink-good"
 ```
 
-Then open `chrome://extensions` and click **Reload** on Drink Good.
+Replace the path with the folder you selected in **Load unpacked**. Then **Reload** the extension on `chrome://extensions`.
+
+---
+
+## Development
+
+For contributors building from source:
+
+```bash
+npm install
+npm run build           # production build → dist/
+npm run dev             # watch mode for extension development
+npm test                # unit tests
+npm run test:e2e        # Playwright E2E (live Vivino + retailer pages)
+npm run test:vivino:live  # live Vivino API smoke test
+```
+
+### Load unpacked from source
+
+1. Run `npm run build`
+2. Open `chrome://extensions` → enable **Developer mode**
+3. **Load unpacked** → select the **`dist/`** folder in this repo
+4. After code changes, rebuild and click **Reload** on `chrome://extensions`
 
 ### Publishing a release (maintainers)
 
 ```bash
-git tag v0.0.2
-git push origin v0.0.2
+git tag v0.0.4
+git push origin v0.0.4
 ```
 
-GitHub Actions builds `drink-good.zip` and attaches it to the release. Local packaging: `npm run package`.
+GitHub Actions builds **`drink-good.zip`** and attaches it to the release. Local packaging: `npm run package`.
 
-## E2E tests (Playwright)
+See [RELEASE_NOTES.md](./RELEASE_NOTES.md) for the current release notes.
 
-```bash
-npm run test:e2e
-```
-
-Loads the built extension in Chromium, opens retailer pages, starts the floating trigger, waits for the **first** product badge (live Vivino lookup), then stops.
-
-- **Wineview:** [red wine listing](https://wineview.com.hk/product-category/wine-shop/red-wine/)
-- **Cru Markets:** [HK store](https://markets.cruworldwine.com/hk) — injects Spartacus-style fixture (API blocks headless)
-- **Watson's Wine:** [category listing](https://www.watsonswine.com/en/c/10010231) — injects `ww-product-tile` fixture (Akamai blocks headless)
-- **RNG Wine:** [Bordeaux red](https://www.rngwine.com/categories/red-wine-bordeaux) — injects Shopline `product-item` fixture
-- **Remfly:** [promotions](https://remfly.com.hk/product/promotion/p?pf=all) — injects `product-cardcontainer` fixture
-- **Ten Cellars:** [red wines](https://www.tencellars.hk/red-wines.html) — injects `.info` listing fixture
-
-Requires network access to the retailer and Vivino. Runs serially with a 90s lookup timeout. Tests set `data-drink-good-max-products="1"` so only the first listing is processed.
+---
 
 ## How it works
 
-1. **Floating trigger** — Burgundy glass FAB on supported retailer pages only
-2. **Extract** — Retailer adapter reads product titles from the DOM
+1. **Floating trigger** — Burgundy glass button on supported retailer pages only
+2. **Extract** — Per-site adapter reads product titles from the DOM
 3. **Match** — Service worker queries Vivino (Algolia + Explore fallback), applies name/vintage matching
 4. **Badge** — Shadow DOM badge per product: `★ 4.3 (713) — Château Lynch-Bages Pauillac (Grand Cru Classé) 2019`
 5. **Popup** — Version, adapter, cache size, processing status; debug tools for logs
 
 ## Badge behavior
 
-| Aspect | Wineview (MVP) |
-|--------|----------------|
-| **Placement** | After product title, before price (inside product link container) |
+| Aspect | Detail |
+|--------|--------|
 | **Content** | Gold star + Vivino score + review count + full matched Vivino name |
-| **Colors** | Score-based tint (green >4.0, amber 3.5–4.0, red <3.5, grey no match) — matches Testing project palette |
+| **Colors** | Score-based tint (green >4.0, amber 3.5–4.0, red <3.5, grey no match) |
 | **No match** | Grey `?` badge with reason in tooltip |
-| **Click** | Opens Vivino wine page (stops propagation so product link is not followed) |
+| **Click** | Opens Vivino wine page (does not follow the shop product link) |
 
-Per-retailer placement and styling is configured via `BadgeAdapter` on each `RetailerAdapter` (see `src/adapters/wineview-badge.ts`).
+Per-retailer placement is configured via `BadgeAdapter` on each `RetailerAdapter` (see `src/adapters/`).
 
 ## Project structure
 
@@ -122,14 +199,7 @@ scripts/
   zip-dist.mjs
   update.sh / update.ps1
 tests/
-  adapters/         # Wineview DOM extraction
-  content/          # Badge render + placement
-  core/             # Badge display helpers
-  vivino/           # Matcher unit tests
-  background/       # Vivino service tests
 e2e/
-  fixtures.ts       # Extension-loaded browser context
-  wineview-first-wine.spec.ts
 ```
 
 ## Configuration
@@ -143,18 +213,5 @@ e2e/
 ## Docs
 
 - [Vivino API notes](docs/vivino-api-notes.md)
-- Linear: [ADR-001 Per-retailer badge display](https://linear.app/alan-chan/document/adr-001-per-retailer-badge-display-533d890a690e)
-- Linear project: [Drink Good](https://linear.app/alan-chan/project/drink-good-f4c0d8c9e72c)
-- PRD: [[PRD] Drink Good](https://linear.app/alan-chan/document/prd-drink-good-9e1cba16e21e)
-
-## Roadmap (Linear)
-
-| Issue | Status | Description |
-|-------|--------|-------------|
-| ALA-76 | [Done](https://linear.app/alan-chan/issue/ALA-76/add-live-e2e-test-for-wineview-first-wine-only) | Playwright E2E — first wine on Wineview |
-| ALA-77 | [Done](https://linear.app/alan-chan/issue/ALA-77/github-releases-pipeline-and-update-scripts) | GitHub Releases + update scripts |
-| ALA-78 | [Done](https://linear.app/alan-chan/issue/ALA-78/cru-world-wine-markets-adapter) | Cru World Wine Markets adapter |
-| ALA-81 | [Done](https://linear.app/alan-chan/issue/ALA-81/implement-watsons-wine-retailer-adapter) | Watson's Wine adapter (Spartacus) |
-| ALA-82 | [Done](https://linear.app/alan-chan/issue/ALA-82/implement-rng-wine-retailer-adapter) | RNG Wine adapter (Shopline) |
-| ALA-83 | [Done](https://linear.app/alan-chan/issue/ALA-83/implement-remfly-retailer-adapter) | Remfly adapter |
-| ALA-79 | [Done](https://linear.app/alan-chan/issue/ALA-79/badge-ui-polish-and-per-site-display-config) | Badge UI polish + per-site display (manual QA passed) |
+- [Release notes](./RELEASE_NOTES.md)
+- Linear: [Drink Good project](https://linear.app/alan-chan/project/drink-good-f4c0d8c9e72c)

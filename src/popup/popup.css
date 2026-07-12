@@ -77,6 +77,11 @@ body {
   font-size: 12px;
 }
 
+/* Author `display: flex` overrides the native `[hidden]` rule — keep banner off when hidden. */
+.update-banner[hidden] {
+  display: none !important;
+}
+
 .update-banner a {
   color: var(--dg-accent-soft);
   font-weight: 600;

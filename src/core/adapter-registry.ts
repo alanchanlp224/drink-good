@@ -2,10 +2,12 @@
 
 import type { RetailerAdapter } from "./adapter";
 import { cruAdapter } from "../adapters/cru";
+import { kingswineAdapter } from "../adapters/kingswine";
 import { remflyAdapter } from "../adapters/remfly";
 import { rngwineAdapter } from "../adapters/rngwine";
 import { tencellarsAdapter } from "../adapters/tencellars";
 import { watsonswineAdapter } from "../adapters/watsonswine";
+import { xtrawineAdapter } from "../adapters/xtrawine";
 import { wineviewAdapter } from "../adapters/wineview";
 
 const adapters: RetailerAdapter[] = [
@@ -15,6 +17,8 @@ const adapters: RetailerAdapter[] = [
   rngwineAdapter,
   remflyAdapter,
   tencellarsAdapter,
+  xtrawineAdapter,
+  kingswineAdapter,
 ];
 
 export function getAdapterForUrl(url: string): RetailerAdapter | null {

@@ -52,6 +52,7 @@ export function renderBadge(
         anchorElement,
         buildMatchedBadge(result, badgeAdapter.display),
         badgeAdapter,
+        result.candidate.vivinoUrl,
       );
       return;
     }
@@ -71,12 +72,62 @@ function placeBadge(
   anchorElement: Element,
   badgeHost: HTMLElement,
   badgeAdapter: BadgeAdapter,
+  vivinoUrl?: string,
 ): void {
+  const productCard = badgeAdapter.findProductCard(anchorElement);
   badgeAdapter.insertBadge({
     anchorElement,
     badgeHost,
-    productCard: badgeAdapter.findProductCard(anchorElement),
+    productCard,
   });
+  if (vivinoUrl) {
+    armBadgeClickGuard(badgeHost, vivinoUrl, productCard);
+  }
+}
+
+/**
+ * Intercept clicks over the badge before full-card overlay links (e.g. Shopify
+ * Dawn) receive them; coordinate hit-testing ignores shadow DOM and z-index.
+ */
+function armBadgeClickGuard(
+  badgeHost: HTMLElement,
+  vivinoUrl: string,
+  productCard: Element | null,
+): void {
+  const root = productCard ?? badgeHost.parentElement;
+  if (!root || badgeHost.dataset.drinkGoodClickGuard === "armed") {
+    return;
+  }
+  badgeHost.dataset.drinkGoodClickGuard = "armed";
+
+  root.addEventListener(
+    "click",
+    (event: Event) => {
+      if (!(event instanceof MouseEvent) || event.button !== 0) {
+        return;
+      }
+
+      const path = event.composedPath();
+      const rect = badgeHost.getBoundingClientRect();
+      const inBadgeBounds =
+        rect.width > 0 &&
+        rect.height > 0 &&
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom;
+
+      if (!inBadgeBounds && !path.includes(badgeHost)) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      window.open(vivinoUrl, "_blank", "noopener,noreferrer");
+    },
+    true,
+  );
 }
 
 function buildMatchedBadge(
@@ -262,6 +313,9 @@ export function injectBadgeStyles(): void {
       background: none !important;
       box-shadow: none !important;
       box-sizing: border-box !important;
+      position: relative !important;
+      z-index: 3 !important;
+      pointer-events: auto !important;
     }
   `;
   document.head.appendChild(style);

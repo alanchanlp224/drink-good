@@ -1,14 +1,48 @@
 /** Floating trigger icon — matches Testing project sommelier-trigger. */
 
+import type { FloatingTriggerOptions } from "../core/adapter";
 import type { PageProcessor } from "./processor";
 
 const TRIGGER_ID = "drink-good-trigger";
+const STACK_WATCH_ATTR = "data-dg-stack-wired";
+const DEFAULT_BOTTOM_PX = 24;
+const DEFAULT_RIGHT_PX = 24;
+const DEFAULT_STACK_GAP_PX = 16;
+/** Reserve space before Smile/rewards widgets load (pill ~60px + gap). */
+const STACK_FALLBACK_BOTTOM_PX = 96;
+const MIN_OBSTACLE_HEIGHT_PX = 10;
+const STACK_POLL_MS = 250;
+const STACK_POLL_MAX_MS = 15_000;
 
-export function mountFloatingButton(processor: PageProcessor): HTMLElement {
+/** FAB `bottom` CSS so its bottom edge sits `gapPx` above an obstacle's top. */
+export function computeStackedTriggerBottom(
+  viewportHeight: number,
+  obstacleTop: number,
+  gapPx: number,
+): number {
+  return Math.ceil(viewportHeight - obstacleTop + gapPx);
+}
+
+export function mountFloatingButton(
+  processor: PageProcessor,
+  triggerOptions?: FloatingTriggerOptions,
+): HTMLElement {
   const existing = document.getElementById(TRIGGER_ID);
   if (existing) {
+    if (
+      triggerOptions?.stackAboveSelector &&
+      existing.getAttribute(STACK_WATCH_ATTR) !== "1"
+    ) {
+      watchStackedTriggerPosition(existing, triggerOptions);
+    }
     return existing;
   }
+
+  const usesStacking = Boolean(triggerOptions?.stackAboveSelector);
+  const bottomPx = usesStacking
+    ? (triggerOptions?.bottomPx ?? STACK_FALLBACK_BOTTOM_PX)
+    : (triggerOptions?.bottomPx ?? DEFAULT_BOTTOM_PX);
+  const rightPx = triggerOptions?.rightPx ?? DEFAULT_RIGHT_PX;
 
   const wrapper = document.createElement("div");
   wrapper.id = TRIGGER_ID;
@@ -19,8 +53,8 @@ export function mountFloatingButton(processor: PageProcessor): HTMLElement {
     <style>
       #${TRIGGER_ID} {
         position: fixed;
-        bottom: 24px;
-        right: 24px;
+        bottom: ${bottomPx}px;
+        right: ${rightPx}px;
         width: 56px;
         height: 56px;
         border-radius: 50%;
@@ -79,11 +113,96 @@ export function mountFloatingButton(processor: PageProcessor): HTMLElement {
   });
 
   document.body.appendChild(wrapper);
+  if (triggerOptions?.stackAboveSelector) {
+    watchStackedTriggerPosition(wrapper, triggerOptions);
+  }
   processor.onStateChange(() => {
     syncTriggerState(wrapper, processor.isRunning());
   });
   syncTriggerState(wrapper, processor.isRunning());
   return wrapper;
+}
+
+function applyStackedTriggerPosition(
+  wrapper: HTMLElement,
+  options: FloatingTriggerOptions,
+): boolean {
+  const selector = options.stackAboveSelector;
+  if (!selector) {
+    return false;
+  }
+
+  const rightPx = options.rightPx ?? DEFAULT_RIGHT_PX;
+  const gapPx = options.stackGapPx ?? DEFAULT_STACK_GAP_PX;
+  const obstacle = document.querySelector(selector);
+  const rect = obstacle?.getBoundingClientRect();
+
+  if (!rect || rect.height < MIN_OBSTACLE_HEIGHT_PX) {
+    wrapper.style.bottom = `${
+      options.bottomPx ??
+      (options.stackAboveSelector
+        ? STACK_FALLBACK_BOTTOM_PX
+        : DEFAULT_BOTTOM_PX)
+    }px`;
+    wrapper.style.right = `${rightPx}px`;
+    return false;
+  }
+
+  wrapper.style.bottom = `${computeStackedTriggerBottom(window.innerHeight, rect.top, gapPx)}px`;
+  wrapper.style.right = `${rightPx}px`;
+  return true;
+}
+
+function watchStackedTriggerPosition(
+  wrapper: HTMLElement,
+  options: FloatingTriggerOptions,
+): void {
+  if (wrapper.getAttribute(STACK_WATCH_ATTR) === "1") {
+    return;
+  }
+  wrapper.setAttribute(STACK_WATCH_ATTR, "1");
+
+  let resizeObserver: ResizeObserver | undefined;
+  let observedObstacle: Element | null = null;
+
+  const apply = (): boolean => {
+    const positioned = applyStackedTriggerPosition(wrapper, options);
+    const selector = options.stackAboveSelector;
+    if (!selector) {
+      return positioned;
+    }
+
+    const obstacle = document.querySelector(selector);
+    if (obstacle && obstacle !== observedObstacle) {
+      resizeObserver?.disconnect();
+      observedObstacle = obstacle;
+      resizeObserver = new ResizeObserver(() => {
+        applyStackedTriggerPosition(wrapper, options);
+      });
+      resizeObserver.observe(obstacle);
+    }
+    return positioned;
+  };
+
+  apply();
+  window.addEventListener("resize", apply);
+
+  const observer = new MutationObserver(() => {
+    apply();
+  });
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["class", "style"],
+  });
+
+  const pollStartedAt = Date.now();
+  const poll = window.setInterval(() => {
+    if (apply() || Date.now() - pollStartedAt >= STACK_POLL_MAX_MS) {
+      window.clearInterval(poll);
+    }
+  }, STACK_POLL_MS);
 }
 
 function syncTriggerState(wrapper: HTMLElement, running: boolean): void {

@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { wineviewBadgeAdapter } from "../../src/adapters/wineview-badge";
+import { xtrawineBadgeAdapter } from "../../src/adapters/xtrawine-badge";
 import {
   buildBadgeMarkup,
   hasBadge,
@@ -129,5 +130,69 @@ describe("badge", () => {
     renderBadge(title, MATCHED_RESULT, wineviewBadgeAdapter);
 
     expect(card.querySelectorAll("[data-drink-good-badge]")).toHaveLength(1);
+  });
+
+  it("click guard intercepts overlay navigation on XtraWine-style cards", () => {
+    document.body.innerHTML = `
+      <li class="grid__item csr" data-product-id="1">
+        <div class="card card--standard">
+          <a class="position-absolute top-0 w-100 h-100 d-block" href="/products/example"></a>
+          <div class="position-static card__content with-quick-add">
+            <div class="card__information">
+              <div class="grid-product-title h3">
+                <a class="full-unstyled-link" href="/products/example">Barbaresco 2022</a>
+              </div>
+              <div class="card-information">
+                <div class="price grid-product-price">€27.00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+    `;
+
+    const title = document.querySelector<HTMLElement>(".full-unstyled-link")!;
+    renderBadge(title, MATCHED_RESULT, xtrawineBadgeAdapter);
+
+    const badge = document.querySelector<HTMLElement>("[data-drink-good-badge]")!;
+    const overlay = document.querySelector<HTMLElement>(
+      "a.position-absolute.top-0",
+    )!;
+    const content = document.querySelector<HTMLElement>(
+      ".card__content.with-quick-add",
+    )!;
+
+    expect(content.style.getPropertyValue("position")).toBe("relative");
+    expect(content.style.getPropertyPriority("position")).toBe("important");
+
+    badge.getBoundingClientRect = () =>
+      ({
+        x: 10,
+        y: 10,
+        left: 10,
+        top: 10,
+        right: 110,
+        bottom: 40,
+        width: 100,
+        height: 30,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    let overlayClicked = false;
+    overlay.addEventListener("click", () => {
+      overlayClicked = true;
+    });
+
+    document.dispatchEvent(
+      new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        clientX: 50,
+        clientY: 20,
+      }),
+    );
+
+    expect(overlayClicked).toBe(false);
+    expect(badge.dataset.drinkGoodClickGuard).toBe("armed");
   });
 });
