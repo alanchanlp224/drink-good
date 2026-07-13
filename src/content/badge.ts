@@ -8,7 +8,7 @@ import {
   scoreStarColor,
 } from "../shared/score-style";
 import { formatVivinoScore } from "../vivino/similarity";
-import type { VivinoMatchResult } from "../vivino/types";
+import type { ScoreScope, VivinoMatchResult } from "../vivino/types";
 
 const BADGE_CLASS = "drink-good-badge";
 const BADGE_ATTR = "data-drink-good-badge";
@@ -37,6 +37,13 @@ export function hasBadge(element: Element, badgeAdapter: BadgeAdapter): boolean 
     return card.querySelector(`[${BADGE_ATTR}]`) !== null;
   }
   return element.parentElement?.querySelector(`[${BADGE_ATTR}]`) !== null;
+}
+
+/** Remove every badge on the page so a new run can re-fetch Vivino scores. */
+export function removeAllPageBadges(): void {
+  withBadgeInjection(() => {
+    document.querySelectorAll(`[${BADGE_ATTR}]`).forEach((node) => node.remove());
+  });
 }
 
 export function renderBadge(
@@ -139,6 +146,7 @@ function buildMatchedBadge(
   const style = getScoreStyle(scoreValue);
   const wineName = result.candidate.matchedName;
   const reviewCount = result.candidate.stats.ratingsCount;
+  const scoreScope = result.candidate.stats.scoreScope ?? "vintage";
   const vivinoUrl = result.candidate.vivinoUrl;
 
   const { host, shadow } = createBadgeHost(`${BADGE_CLASS}--${style.id}`);
@@ -147,8 +155,8 @@ function buildMatchedBadge(
   link.href = vivinoUrl;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
-  link.title = buildTooltip(wineName, reviewCount);
-  link.innerHTML = buildBadgeMarkup(score, reviewCount, wineName);
+  link.title = buildTooltip(wineName, reviewCount, scoreScope);
+  link.innerHTML = buildBadgeMarkup(score, reviewCount, wineName, scoreScope);
   link.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -260,9 +268,16 @@ export function buildBadgeMarkup(
   score: string | null,
   reviewCount: number | null,
   wineName: string,
+  scoreScope: ScoreScope = "vintage",
 ): string {
-  const reviews =
-    reviewCount && reviewCount > 0 ? ` (${reviewCount.toLocaleString()})` : "";
+  let reviews = "";
+  if (score) {
+    if (scoreScope === "all_vintages") {
+      reviews = " (All Vintage)";
+    } else if (reviewCount && reviewCount > 0) {
+      reviews = ` (${reviewCount.toLocaleString()})`;
+    }
+  }
   const scoreText = score ? `${escapeHtml(score)}${reviews}` : "N/A";
   return `<span class="star" aria-hidden="true">★</span> ${scoreText} <span class="name">— ${escapeHtml(wineName)}</span>`;
 }
@@ -278,7 +293,11 @@ function escapeHtml(text: string): string {
 function buildTooltip(
   wineName: string,
   reviewCount: number | null,
+  scoreScope: ScoreScope = "vintage",
 ): string {
+  if (scoreScope === "all_vintages") {
+    return `${wineName} · All vintages average on Vivino`;
+  }
   if (reviewCount && reviewCount > 0) {
     return `${wineName} · ${reviewCount.toLocaleString()} reviews on Vivino`;
   }

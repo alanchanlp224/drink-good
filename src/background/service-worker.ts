@@ -123,6 +123,7 @@ async function handleRequest(
 
     case "BEGIN_RUN": {
       logger.clear();
+      getVivinoService().clearCache();
       return { type: "PONG" };
     }
 
@@ -132,8 +133,9 @@ async function handleRequest(
       );
       const result = await getVivinoService().searchWine(request.wineTitle);
       if (result.status === "matched") {
+        const scope = result.candidate.stats.scoreScope ?? "vintage";
         logger.info(
-          `Match: "${result.candidate.matchedName}" score=${result.candidate.stats.ratingsAverage ?? "n/a"} confidence=${result.confidence.toFixed(2)}`,
+          `Match: "${result.candidate.matchedName}" score=${result.candidate.stats.ratingsAverage ?? "n/a"} (${scope}) confidence=${result.confidence.toFixed(2)}`,
         );
       } else {
         logger.warn(`No match: ${result.reason}`);

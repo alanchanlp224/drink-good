@@ -1,5 +1,7 @@
 /** Shared Vivino domain types for search and matching. */
 
+export type ScoreScope = "vintage" | "all_vintages";
+
 export interface NormalizedQuery {
   /** Wine name text used for Vivino search (vintage stripped when present). */
   searchText: string;
@@ -7,11 +9,15 @@ export interface NormalizedQuery {
   vintage: number | null;
   /** Original normalized full title for logging. */
   rawNormalized: string;
+  /** Shop title declared NV (no year) — prefer U.V. Vivino vintages. */
+  nonVintage: boolean;
 }
 
 export interface VivinoVintageStats {
   ratingsAverage: number | null;
   ratingsCount: number | null;
+  /** When set to all_vintages, ratingsAverage is the wine-wide average (U.V.). */
+  scoreScope?: ScoreScope;
 }
 
 export interface VivinoSearchCandidate {

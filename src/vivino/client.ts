@@ -4,6 +4,7 @@ import { searchAlgolia } from "./algolia.js";
 import { searchExplore } from "./explore.js";
 import { RateLimiter } from "./http.js";
 import { buildNormalizedQuery, pickBestMatch } from "./matcher.js";
+import { buildAlgoliaSearchQueries, distillSearchQuery } from "./search-query.js";
 import type {
   NormalizedQuery,
   VivinoClientConfig,
@@ -15,6 +16,9 @@ import { enrichCandidateStats } from "./vintage.js";
 
 const DEFAULT_USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+/** Bump when cached Vivino match payloads change shape or scoring rules. */
+const VIVINO_CACHE_VERSION = 3;
 
 export class VivinoClient {
   private readonly config: Required<
@@ -62,7 +66,7 @@ export class VivinoClient {
   }
 
   private cacheKey(query: NormalizedQuery): string {
-    return `${query.searchText}|${query.vintage ?? "nv"}`;
+    return `${VIVINO_CACHE_VERSION}|${query.searchText}|${query.vintage ?? "nv"}`;
   }
 
   /**
@@ -110,9 +114,10 @@ export class VivinoClient {
       rateLimiter: this.rateLimiter,
       maxRetries: this.config.maxRetries,
       targetVintage: query.vintage,
+      preferNonVintage: query.nonVintage,
     };
 
-    const algoliaCandidates = await searchAlgolia(query.searchText, {
+    const algoliaCandidates = await searchAlgoliaCascade(query, {
       ...requestOptions,
       appId: this.config.algoliaAppId,
       apiKey: this.config.algoliaApiKey,
@@ -124,23 +129,65 @@ export class VivinoClient {
       return dedupeCandidates(algoliaCandidates);
     }
 
-    const exploreCandidates = await searchExplore(query.searchText, {
-      baseUrl: this.config.baseUrl,
-      userAgent: this.config.userAgent,
-      fetchFn: this.config.fetchFn,
-      rateLimiter: this.rateLimiter,
-      maxRetries: this.config.maxRetries,
-      vintage: query.vintage,
-      countryCode: this.config.countryCode,
-      currencyCode: this.config.currencyCode,
-    });
+    const exploreQueries = [
+      query.searchText,
+      distillSearchQuery(query.searchText),
+    ].filter((value, index, list) => value && list.indexOf(value) === index);
 
-    return dedupeCandidates(exploreCandidates);
+    for (const exploreQuery of exploreQueries) {
+      const exploreCandidates = await searchExplore(exploreQuery, {
+        baseUrl: this.config.baseUrl,
+        userAgent: this.config.userAgent,
+        fetchFn: this.config.fetchFn,
+        rateLimiter: this.rateLimiter,
+        maxRetries: this.config.maxRetries,
+        vintage: query.vintage,
+        countryCode: this.config.countryCode,
+        currencyCode: this.config.currencyCode,
+      });
+
+      if (exploreCandidates.length > 0) {
+        return dedupeCandidates(exploreCandidates);
+      }
+    }
+
+    return [];
   }
 }
 
 function matcherConfigLimit(): number {
   return 15;
+}
+
+async function searchAlgoliaCascade(
+  query: NormalizedQuery,
+  options: Parameters<typeof searchAlgolia>[1] & {
+    appId?: string;
+    apiKey?: string;
+    index?: string;
+    hitsPerPage?: number;
+  },
+): Promise<VivinoSearchCandidate[]> {
+  const searchQueries = buildAlgoliaSearchQueries(query.searchText);
+  const merged: VivinoSearchCandidate[] = [];
+  const seenVintageIds = new Set<number>();
+
+  for (const searchQuery of searchQueries) {
+    const batch = await searchAlgolia(searchQuery, options);
+    for (const candidate of batch) {
+      if (seenVintageIds.has(candidate.vintageId)) {
+        continue;
+      }
+      seenVintageIds.add(candidate.vintageId);
+      merged.push(candidate);
+    }
+
+    if (merged.length >= matcherConfigLimit()) {
+      break;
+    }
+  }
+
+  return merged;
 }
 
 function dedupeCandidates(
@@ -163,4 +210,9 @@ export {
   DEFAULT_VINTAGE_MATCH_THRESHOLD,
 } from "./matcher.js";
 export { buildNormalizedQuery, pickBestMatch } from "./matcher.js";
-export { nameSimilarity, formatVivinoScore } from "./similarity.js";
+export {
+  formatVivinoScore,
+  nameSimilarity,
+  scoreNameMatch,
+  type MatchScoreBreakdown,
+} from "./similarity.js";

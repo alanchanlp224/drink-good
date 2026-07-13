@@ -2,7 +2,7 @@
 
 Chrome extension (Manifest V3) that overlays **Vivino scores and matched wine names** on wine retailer product listings.
 
-**Version:** 0.0.4
+**Version:** 0.0.5
 
 ## Supported wine shops
 
@@ -29,7 +29,7 @@ You do **not** need to write code or install Node.js. These steps assume you hav
 
 1. Open the Drink Good releases page:  
    **https://github.com/alanchanlp224/drink-good/releases**
-2. At the top of the list, click the **latest release** (for example **v0.0.4**).  
+2. At the top of the list, click the **latest release** (for example **v0.0.5**).  
    Do **not** download the source code (Source code zip/tar.gz) — that is for developers only.
 3. Scroll down to the **Assets** section.
 4. Click **`drink-good.zip`** to download it.  
@@ -152,8 +152,8 @@ npm run test:vivino:live  # live Vivino API smoke test
 ### Publishing a release (maintainers)
 
 ```bash
-git tag v0.0.4
-git push origin v0.0.4
+git tag v0.0.5
+git push origin v0.0.5
 ```
 
 GitHub Actions builds **`drink-good.zip`** and attaches it to the release. Local packaging: `npm run package`.

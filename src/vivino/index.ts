@@ -4,8 +4,11 @@ export { searchExplore } from "./explore.js";
 export {
   buildNormalizedQuery,
   pickBestMatch,
+  compareScoredCandidates,
   DEFAULT_VINTAGE_MATCH_THRESHOLD,
   DEFAULT_NAME_ONLY_THRESHOLD,
+  MATCH_SCORE_TIE_EPSILON,
+  type ScoredCandidate,
 } from "./matcher.js";
 export {
   nameSimilarity,
@@ -13,6 +16,9 @@ export {
   extractVintage,
   stripVintage,
   formatVivinoScore,
+  scoreNameMatch,
+  stripConditionMarkers,
+  type MatchScoreBreakdown,
 } from "./similarity.js";
 export { buildVivinoUrl } from "./url.js";
 export type {

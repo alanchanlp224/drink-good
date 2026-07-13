@@ -3,7 +3,7 @@
 import type { RetailerAdapter } from "../core/adapter";
 import type { ProductCandidate } from "../core/adapter";
 import { sendBackgroundRequest } from "../shared/runtime";
-import { hasBadge, renderBadge, shouldSuppressMutationHandling } from "./badge";
+import { hasBadge, removeAllPageBadges, renderBadge, shouldSuppressMutationHandling } from "./badge";
 
 export class PageProcessor {
   private running = false;
@@ -47,6 +47,7 @@ export class PageProcessor {
     await sendBackgroundRequest({ type: "BEGIN_RUN" });
     this.running = true;
     this.notifyStateChange();
+    removeAllPageBadges();
     await this.log("info", `Started processing on ${this.adapter.displayName}`);
     await this.setProcessingState("running", 0, 0);
     this.startObserver();

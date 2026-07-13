@@ -1,11 +1,11 @@
-# Drink Good v0.0.4
+# Drink Good v0.0.5
 
 Chrome extension that overlays **Vivino scores and matched wine names** on supported wine shop product listings.
 
 ## Download
 
 1. Open **[Releases](https://github.com/alanchanlp224/drink-good/releases)** on GitHub.
-2. Click the **latest release** at the top (this release: **v0.0.4**).
+2. Click the **latest release** at the top (this release: **v0.0.5**).
 3. Scroll to **Assets**.
 4. Click **`drink-good.zip`** to download.
 5. Follow the [installation guide in README](https://github.com/alanchanlp224/drink-good#install-drink-good-chrome) (macOS and Windows).
@@ -25,16 +25,21 @@ Chrome extension that overlays **Vivino scores and matched wine names** on suppo
 
 Visit a supported shop, click the **burgundy wine-glass button** (bottom-right), and Vivino badges appear on product cards.
 
-## What's new in v0.0.4
+## What's new in v0.0.5
 
-### New retailers
-- **XtraWine** — Shopify + Algolia product grid; badge opens Vivino without following the product link.
-- **King's Wine Cellar** — Shopify collection grid and product pages.
+### Vivino matching (major)
+- **Composite name scoring** with tie-breakers — fewer wrong cuvée picks (e.g. Les Quartz vs generic Châteauneuf).
+- **Apostrophe normalization** — Wineview curly apostrophes (`d'Armailhac`) match correctly.
+- **Condition notes stripped** — `(damage label)` and similar shop notes no longer block matches.
+- **All-vintage score fallback** — when a young vintage has no published average, shows wine-wide score with **(All Vintage)** in the badge.
+- **NV / champagne fixes** — U.V. wines no longer dropped from Algolia; distilled search queries and multi-step Algolia cascade; style tokens (`brut nature`, `blanc de blancs`) and bottle sizes (`Magnum 1.5L`) stripped for search and scoring.
+- **Re-run refreshes badges** — starting a new run clears stale badges and Vivino session cache.
 
-### Fixes & improvements
-- **Floating trigger** on King's Wine stacks above the Smile.io Rewards button with a clear gap.
-- **Update banner** no longer shows when you are already on the latest release.
-- Badge click handling improved on overlay-heavy product cards (XtraWine).
+### Examples fixed in this release
+- d'Armailhac 1993, Lafon Rochet 1989 (damage label), d'Aiguilhe 2014
+- La Chapelle de La Mission Haut-Brion 2023 (all-vintage 4.2)
+- Jacques Lassaigne Le Cotet NV (incl. Magnum)
+- Benoit Dehu Initiation Brut Nature NV
 
 ## Upgrading from an earlier release
 
@@ -47,4 +52,4 @@ Or download `drink-good.zip` again and overwrite the same folder manually.
 
 ## Full changelog
 
-https://github.com/alanchanlp224/drink-good/compare/v0.0.3...v0.0.4
+https://github.com/alanchanlp224/drink-good/compare/v0.0.4...v0.0.5

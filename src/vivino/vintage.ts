@@ -58,6 +58,7 @@ export async function enrichCandidateStats(
       stats: {
         ratingsAverage: stats.ratings_average,
         ratingsCount: stats.ratings_count ?? candidate.stats.ratingsCount,
+        scoreScope: "vintage",
       },
     };
   } catch {

@@ -5,6 +5,7 @@ import {
   buildBadgeMarkup,
   hasBadge,
   injectBadgeStyles,
+  removeAllPageBadges,
   renderBadge,
 } from "../../src/content/badge";
 import { insertBadgeAfterTitleBeforePrice } from "../../src/core/badge-display";
@@ -102,6 +103,18 @@ describe("badge", () => {
     expect(markup).toContain("Château Lynch-Bages Pauillac (Grand Cru Classé)");
   });
 
+  it("badge markup shows All Vintage label for wine-wide fallback scores", () => {
+    const markup = buildBadgeMarkup(
+      "4.2",
+      8944,
+      "La Chapelle de La Mission Haut-Brion Pessac-Léognan 2023",
+      "all_vintages",
+    );
+    expect(markup).toContain("4.2 (All Vintage)");
+    expect(markup).not.toContain("(8,944)");
+    expect(markup).not.toContain("(8944)");
+  });
+
   it("renders unknown match badge", () => {
     const title = document.querySelector<HTMLElement>(
       ".woocommerce-loop-product__title",
@@ -118,6 +131,18 @@ describe("badge", () => {
     );
 
     expect(hasBadge(title, wineviewBadgeAdapter)).toBe(true);
+  });
+
+  it("removeAllPageBadges clears every badge on the page", () => {
+    const title = document.querySelector<HTMLElement>(
+      ".woocommerce-loop-product__title",
+    )!;
+    renderBadge(title, MATCHED_RESULT, wineviewBadgeAdapter);
+    expect(document.querySelectorAll("[data-drink-good-badge]")).toHaveLength(1);
+
+    removeAllPageBadges();
+    expect(document.querySelectorAll("[data-drink-good-badge]")).toHaveLength(0);
+    expect(hasBadge(title, wineviewBadgeAdapter)).toBe(false);
   });
 
   it("replaces existing badge on re-render", () => {

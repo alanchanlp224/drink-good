@@ -1,8 +1,10 @@
 /** Vivino Algolia WINES_prod search — full wine catalog. */
 
 import { fetchJson } from "./http.js";
+import { resolveCandidateStats } from "./stats.js";
 import type { VivinoSearchCandidate } from "./types.js";
 import { buildVivinoUrl } from "./url.js";
+import { parseVintageYear, pickVintage } from "./vintage-picker.js";
 
 export const DEFAULT_ALGOLIA_APP_ID = "9TAKGWJUXL";
 export const DEFAULT_ALGOLIA_API_KEY = "60c11b2f1068885161d95ca068d3a6ae";
@@ -23,6 +25,7 @@ interface AlgoliaHit {
   name?: string;
   seo_name?: string;
   type_id?: number;
+  non_vintage?: boolean;
   winery?: { name?: string; seo_name?: string };
   region?: { name?: string; country?: string };
   statistics?: { ratings_average?: number; ratings_count?: number };
@@ -34,49 +37,17 @@ interface AlgoliaResponse {
   nbHits?: number;
 }
 
-function parseVintageYear(value: number | string | undefined): number | null {
-  if (value === undefined || value === null || value === "U.V.") {
-    return null;
-  }
-  const year = Number.parseInt(String(value), 10);
-  return Number.isFinite(year) ? year : null;
-}
-
-function pickVintage(
-  vintages: AlgoliaVintage[],
-  targetVintage: number | null,
-): AlgoliaVintage | null {
-  if (vintages.length === 0) {
-    return null;
-  }
-
-  if (targetVintage !== null) {
-    const exact = vintages.find(
-      (v) => parseVintageYear(v.year) === targetVintage,
-    );
-    if (exact) {
-      return exact;
-    }
-    return null;
-  }
-
-  const rated = vintages.filter(
-    (v) => ((v.statistics?.ratings_count as number | undefined) ?? 0) > 0,
-  );
-  const pool = rated.length > 0 ? rated : vintages;
-  return pool.reduce<AlgoliaVintage | null>((best, current) => {
-    const bestYear = parseVintageYear(best?.year) ?? -1;
-    const currentYear = parseVintageYear(current.year) ?? -1;
-    return currentYear > bestYear ? current : best;
-  }, null);
-}
-
 function hitToCandidate(
   hit: AlgoliaHit,
   targetVintage: number | null,
+  preferNonVintage: boolean,
   baseUrl: string,
 ): VivinoSearchCandidate | null {
-  const vintage = pickVintage(hit.vintages ?? [], targetVintage);
+  const vintage = pickVintage(
+    hit.vintages ?? [],
+    targetVintage,
+    preferNonVintage || hit.non_vintage === true,
+  );
   if (!vintage?.id) {
     return null;
   }
@@ -87,17 +58,17 @@ function hitToCandidate(
     vintage.name ??
     (wineryName ? `${wineryName} ${wineName}`.trim() : wineName);
 
-  const stats = vintage.statistics ?? hit.statistics ?? {};
+  const stats = resolveCandidateStats(
+    vintage.statistics ?? {},
+    hit.statistics ?? null,
+  );
 
   return {
     wineId: hit.id,
     vintageId: vintage.id,
     matchedName,
     vintage: parseVintageYear(vintage.year),
-    stats: {
-      ratingsAverage: stats.ratings_average ?? null,
-      ratingsCount: stats.ratings_count ?? null,
-    },
+    stats,
     vivinoUrl: buildVivinoUrl(
       hit.id,
       hit.winery?.seo_name,
@@ -114,6 +85,7 @@ export async function searchAlgolia(
   options: {
     hitsPerPage?: number;
     targetVintage?: number | null;
+    preferNonVintage?: boolean;
     baseUrl?: string;
     appId?: string;
     apiKey?: string;
@@ -129,6 +101,7 @@ export async function searchAlgolia(
   const index = options.index ?? DEFAULT_ALGOLIA_INDEX;
   const baseUrl = options.baseUrl ?? "https://www.vivino.com";
   const hitsPerPage = options.hitsPerPage ?? 15;
+  const preferNonVintage = options.preferNonVintage ?? false;
 
   const url = `https://${appId}-dsn.algolia.net/1/indexes/${index}/query`;
   const params = new URLSearchParams({
@@ -159,7 +132,12 @@ export async function searchAlgolia(
   const candidates: VivinoSearchCandidate[] = [];
 
   for (const hit of data.hits ?? []) {
-    const candidate = hitToCandidate(hit, targetVintage, baseUrl);
+    const candidate = hitToCandidate(
+      hit,
+      targetVintage,
+      preferNonVintage,
+      baseUrl,
+    );
     if (candidate) {
       candidates.push(candidate);
     }
