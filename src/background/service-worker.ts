@@ -8,6 +8,7 @@ import type {
   BackgroundResponse,
   ExtensionStatus,
   ProcessingStatus,
+  UpdateAvailableInfo,
 } from "../shared/messages";
 import { getVivinoService } from "./vivino-service";
 
@@ -16,8 +17,8 @@ const EXTENSION_VERSION = chrome.runtime.getManifest().version;
 let processingStatus: ProcessingStatus = "idle";
 let queueProcessed = 0;
 let queueTotal = 0;
-let cachedLatestRelease: string | null = null;
-let releaseCheckPromise: Promise<string | null> | null = null;
+let cachedLatestRelease: UpdateAvailableInfo | null = null;
+let releaseCheckPromise: Promise<UpdateAvailableInfo | null> | null = null;
 
 function buildStatus(activeAdapterId: string | null): ExtensionStatus {
   return {
@@ -49,7 +50,7 @@ async function resolveTabUrl(
   return activeTab?.url ?? null;
 }
 
-async function checkForUpdate(): Promise<string | null> {
+async function checkForUpdate(): Promise<UpdateAvailableInfo | null> {
   if (releaseCheckPromise) {
     return releaseCheckPromise;
   }
@@ -57,8 +58,16 @@ async function checkForUpdate(): Promise<string | null> {
   releaseCheckPromise = (async () => {
     try {
       const latest = await checkForNewerRelease(EXTENSION_VERSION);
-      cachedLatestRelease = latest;
-      return latest;
+      if (!latest?.zipBrowserDownloadUrl) {
+        cachedLatestRelease = null;
+        return null;
+      }
+      cachedLatestRelease = {
+        version: latest.version,
+        releaseHtmlUrl: latest.releaseHtmlUrl,
+        zipBrowserDownloadUrl: latest.zipBrowserDownloadUrl,
+      };
+      return cachedLatestRelease;
     } catch {
       cachedLatestRelease = null;
       return null;

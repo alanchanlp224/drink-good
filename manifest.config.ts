@@ -49,6 +49,8 @@ export default defineManifest({
     "https://www.vivino.com/*",
     "https://*.algolia.net/*",
     "https://api.github.com/*",
+    "https://github.com/*",
+    "https://objects.githubusercontent.com/*",
     "*://wineview.com.hk/*",
     "*://www.wineview.com.hk/*",
     "*://markets.cruworldwine.com/*",

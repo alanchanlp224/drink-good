@@ -27,4 +27,8 @@ describe("github-update", () => {
     expect(compareSemver("0.0.3", "0.0.3")).toBe(0);
     expect(compareSemver("v0.0.3", "0.0.3")).toBe(0);
   });
+
+  it("detects newer release for install eligibility", () => {
+    expect(compareSemver("0.0.7", "0.0.6")).toBe(1);
+  });
 });

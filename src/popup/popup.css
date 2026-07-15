@@ -66,8 +66,7 @@ body {
 
 .update-banner {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 8px;
   margin-bottom: 10px;
   padding: 8px 10px;
@@ -82,14 +81,52 @@ body {
   display: none !important;
 }
 
-.update-banner a {
-  color: var(--dg-accent-soft);
-  font-weight: 600;
-  text-decoration: none;
+.update-banner__copy {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
 }
 
-.update-banner a:hover {
+.update-banner__copy strong {
+  color: var(--dg-accent-soft);
+  font-weight: 600;
+}
+
+.update-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.update-banner__notes {
+  color: var(--dg-accent-soft);
+  font-weight: 500;
+  text-decoration: none;
+  margin-left: auto;
+  font-size: 11px;
+}
+
+.update-banner__notes:hover {
   text-decoration: underline;
+}
+
+.update-progress {
+  margin: 0;
+  font-size: 11px;
+  color: var(--dg-muted);
+}
+
+.update-progress[hidden] {
+  display: none !important;
+}
+
+.btn--compact {
+  width: auto;
+  min-height: 28px;
+  padding: 4px 10px;
+  font-size: 11px;
 }
 
 .panel {

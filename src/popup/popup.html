@@ -31,8 +31,27 @@
     </header>
 
     <div id="update-banner" class="update-banner" hidden>
-      <span>Update available</span>
-      <a id="update-link" href="#" target="_blank" rel="noopener noreferrer"></a>
+      <div class="update-banner__copy">
+        <span>Update available</span>
+        <strong id="update-version"></strong>
+      </div>
+      <div class="update-banner__actions">
+        <button id="update-now" type="button" class="btn btn--primary btn--compact">
+          Update now
+        </button>
+        <button id="update-later" type="button" class="btn btn--secondary btn--compact">
+          Later
+        </button>
+        <a
+          id="update-link"
+          class="update-banner__notes"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Release notes</a
+        >
+      </div>
+      <p id="update-progress" class="update-progress" hidden></p>
     </div>
 
     <section class="panel">
@@ -65,6 +84,9 @@
         </button>
         <button id="clear-cache" type="button" class="btn btn--primary">
           Clear Vivino cache
+        </button>
+        <button id="change-install-folder" type="button" class="btn btn--secondary">
+          Change install folder…
         </button>
         <p id="feedback" class="feedback" hidden></p>
       </div>

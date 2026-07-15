@@ -1,6 +1,14 @@
+import { downloadAndApplyUpdate } from "../shared/apply-update";
 import { GITHUB_REPO } from "../shared/config";
 import { compareSemver, parseSemverCore } from "../shared/github-update";
+import { ensureInstallFolder } from "../shared/install-folder";
+import type { UpdateAvailableInfo } from "../shared/messages";
 import { sendBackgroundRequest } from "../shared/runtime";
+import {
+  isUpdateSnoozed,
+  loadUpdateSnooze,
+  snoozeUpdate,
+} from "../shared/update-snooze";
 
 const versionEl = document.querySelector<HTMLElement>("#version");
 const brandIconEl = document.querySelector<HTMLImageElement>("#brand-icon");
@@ -9,11 +17,21 @@ const adapterIdEl = document.querySelector<HTMLElement>("#adapter-id");
 const cacheSizeEl = document.querySelector<HTMLElement>("#cache-size");
 const logCountEl = document.querySelector<HTMLElement>("#log-count");
 const updateBannerEl = document.querySelector<HTMLElement>("#update-banner");
+const updateVersionEl = document.querySelector<HTMLElement>("#update-version");
 const updateLinkEl = document.querySelector<HTMLAnchorElement>("#update-link");
+const updateNowBtn = document.querySelector<HTMLButtonElement>("#update-now");
+const updateLaterBtn = document.querySelector<HTMLButtonElement>("#update-later");
+const updateProgressEl = document.querySelector<HTMLElement>("#update-progress");
 const downloadLogBtn = document.querySelector<HTMLButtonElement>("#download-log");
 const clearLogBtn = document.querySelector<HTMLButtonElement>("#clear-log");
 const clearCacheBtn = document.querySelector<HTMLButtonElement>("#clear-cache");
+const changeInstallFolderBtn = document.querySelector<HTMLButtonElement>(
+  "#change-install-folder",
+);
 const feedbackEl = document.querySelector<HTMLElement>("#feedback");
+
+let pendingUpdate: UpdateAvailableInfo | null = null;
+let updateInProgress = false;
 
 function showFeedback(message: string, isError = false): void {
   if (!feedbackEl) {
@@ -22,6 +40,19 @@ function showFeedback(message: string, isError = false): void {
   feedbackEl.hidden = false;
   feedbackEl.textContent = message;
   feedbackEl.classList.toggle("error", isError);
+}
+
+function setUpdateProgress(message: string | null): void {
+  if (!updateProgressEl) {
+    return;
+  }
+  if (!message) {
+    updateProgressEl.hidden = true;
+    updateProgressEl.textContent = "";
+    return;
+  }
+  updateProgressEl.hidden = false;
+  updateProgressEl.textContent = message;
 }
 
 async function getActiveTabUrl(): Promise<string | undefined> {
@@ -61,22 +92,101 @@ async function refreshStatus(): Promise<void> {
     logCountEl.textContent = String(status.logLineCount);
   }
 
-  if (updateBannerEl && updateLinkEl) {
-    const releaseVersion = status.updateAvailable;
+  if (updateBannerEl && updateVersionEl && updateLinkEl) {
+    const release = status.updateAvailable;
+    const snooze = await loadUpdateSnooze();
     const hasNewerRelease =
-      releaseVersion &&
+      release &&
+      release.zipBrowserDownloadUrl &&
       GITHUB_REPO &&
-      parseSemverCore(releaseVersion) &&
-      compareSemver(releaseVersion, status.version) > 0;
-    if (hasNewerRelease) {
+      parseSemverCore(release.version) &&
+      compareSemver(release.version, status.version) > 0 &&
+      !isUpdateSnoozed(release.version, snooze);
+
+    if (hasNewerRelease && release) {
+      pendingUpdate = release;
       updateBannerEl.hidden = false;
-      updateLinkEl.textContent = `v${releaseVersion}`;
-      updateLinkEl.href = `https://github.com/${GITHUB_REPO}/releases/latest`;
+      updateVersionEl.textContent = `v${release.version}`;
+      updateLinkEl.href =
+        release.releaseHtmlUrl ||
+        `https://github.com/${GITHUB_REPO}/releases/latest`;
     } else {
+      pendingUpdate = null;
       updateBannerEl.hidden = true;
-      updateLinkEl.textContent = "";
+      updateVersionEl.textContent = "";
       updateLinkEl.removeAttribute("href");
     }
+  }
+}
+
+async function runUpdate(): Promise<void> {
+  if (updateInProgress || !pendingUpdate?.zipBrowserDownloadUrl) {
+    return;
+  }
+
+  const version = pendingUpdate.version;
+  const zipUrl = pendingUpdate.zipBrowserDownloadUrl;
+  const confirmed = window.confirm(
+    `Install Drink Good v${version}?\n\n` +
+      `You will be asked to choose the same folder you used for “Load unpacked” ` +
+      `(or we reuse a previously chosen folder).\n\n` +
+      `Chrome will reload the extension after the update.`,
+  );
+  if (!confirmed) {
+    return;
+  }
+
+  updateInProgress = true;
+  if (updateNowBtn) {
+    updateNowBtn.disabled = true;
+  }
+  if (updateLaterBtn) {
+    updateLaterBtn.disabled = true;
+  }
+
+  try {
+    setUpdateProgress("Granting install folder access…");
+    const folder = await ensureInstallFolder(false);
+    setUpdateProgress(`Downloading v${version}…`);
+    await downloadAndApplyUpdate(zipUrl, folder);
+    setUpdateProgress("Installed. Reloading…");
+    chrome.runtime.reload();
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Update failed";
+    setUpdateProgress(null);
+    showFeedback(message, true);
+  } finally {
+    updateInProgress = false;
+    if (updateNowBtn) {
+      updateNowBtn.disabled = false;
+    }
+    if (updateLaterBtn) {
+      updateLaterBtn.disabled = false;
+    }
+  }
+}
+
+async function deferUpdate(): Promise<void> {
+  if (!pendingUpdate) {
+    return;
+  }
+  await snoozeUpdate(pendingUpdate.version);
+  if (updateBannerEl) {
+    updateBannerEl.hidden = true;
+  }
+  showFeedback(`Update to v${pendingUpdate.version} snoozed for 7 days`);
+  pendingUpdate = null;
+}
+
+async function changeInstallFolder(): Promise<void> {
+  try {
+    await ensureInstallFolder(true);
+    showFeedback("Install folder saved for future updates");
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Could not save folder";
+    showFeedback(message, true);
   }
 }
 
@@ -118,6 +228,20 @@ async function clearCache(): Promise<void> {
   }
 }
 
+updateNowBtn?.addEventListener("click", () => {
+  runUpdate().catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : "Update failed";
+    showFeedback(message, true);
+  });
+});
+
+updateLaterBtn?.addEventListener("click", () => {
+  deferUpdate().catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : "Snooze failed";
+    showFeedback(message, true);
+  });
+});
+
 downloadLogBtn?.addEventListener("click", () => {
   downloadLog().catch((error: unknown) => {
     const message = error instanceof Error ? error.message : "Download failed";
@@ -139,6 +263,14 @@ clearCacheBtn?.addEventListener("click", () => {
   });
 });
 
+changeInstallFolderBtn?.addEventListener("click", () => {
+  changeInstallFolder().catch((error: unknown) => {
+    const message =
+      error instanceof Error ? error.message : "Could not change folder";
+    showFeedback(message, true);
+  });
+});
+
 if (brandIconEl) {
   brandIconEl.src = chrome.runtime.getURL("public/icon-48.png");
 }
@@ -149,5 +281,7 @@ refreshStatus().catch((error: unknown) => {
 });
 
 setInterval(() => {
-  refreshStatus().catch(() => undefined);
+  if (!updateInProgress) {
+    refreshStatus().catch(() => undefined);
+  }
 }, 2000);

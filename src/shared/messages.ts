@@ -1,9 +1,16 @@
 /** Extension messaging between popup, content scripts, and service worker. */
 
 import type { LogLevel } from "../core/logger";
+import type { LatestReleaseInfo } from "./github-update";
 import type { VivinoMatchResult } from "../vivino/types";
 
 export type ProcessingStatus = "idle" | "running" | "stopped";
+
+/** Newer GitHub release available for in-app install (zip required). */
+export type UpdateAvailableInfo = Pick<
+  LatestReleaseInfo,
+  "version" | "releaseHtmlUrl" | "zipBrowserDownloadUrl"
+>;
 
 export interface ExtensionStatus {
   version: string;
@@ -13,7 +20,7 @@ export interface ExtensionStatus {
   vivinoCacheSize: number;
   logLineCount: number;
   activeAdapterId: string | null;
-  updateAvailable: string | null;
+  updateAvailable: UpdateAvailableInfo | null;
 }
 
 export type BackgroundRequest =

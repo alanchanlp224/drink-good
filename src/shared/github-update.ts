@@ -109,11 +109,14 @@ export async function fetchLatestRelease(
   return fromReleasePayload(releases[0]);
 }
 
-/** Returns newer release version when an update exists; otherwise `null`. */
+/**
+ * Returns full release info when a newer version exists; otherwise `null`.
+ * Requires a downloadable zip asset for in-app install.
+ */
 export async function checkForNewerRelease(
   currentVersion: string,
   repo: string = GITHUB_REPO,
-): Promise<string | null> {
+): Promise<LatestReleaseInfo | null> {
   if (!parseSemverCore(currentVersion)) {
     return null;
   }
@@ -123,7 +126,13 @@ export async function checkForNewerRelease(
     return null;
   }
 
-  return compareSemver(latest.version, currentVersion) > 0
-    ? latest.version
-    : null;
+  if (compareSemver(latest.version, currentVersion) <= 0) {
+    return null;
+  }
+
+  if (!latest.zipBrowserDownloadUrl) {
+    return null;
+  }
+
+  return latest;
 }

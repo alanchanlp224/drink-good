@@ -2,7 +2,7 @@
 
 Chrome extension (Manifest V3) that overlays **Vivino scores and matched wine names** on wine retailer product listings.
 
-**Version:** 0.0.6
+**Version:** 0.0.7
 
 ## Supported wine shops
 
@@ -29,7 +29,7 @@ You do **not** need to write code or install Node.js. These steps assume you hav
 
 1. Open the Drink Good releases page:  
    **https://github.com/alanchanlp224/drink-good/releases**
-2. At the top of the list, click the **latest release** (for example **v0.0.6**).  
+2. At the top of the list, click the **latest release** (for example **v0.0.7**).  
    Do **not** download the source code (Source code zip/tar.gz) — that is for developers only.
 3. Scroll down to the **Assets** section.
 4. Click **`drink-good.zip`** to download it.  
@@ -99,16 +99,27 @@ Open the extension **popup** (click the pinned icon) to see version, status, and
 
 ## Updating to a newer version
 
-When a newer release is published, the extension **popup** shows an **Update available** banner with a link to GitHub.
+When a newer release is published, the extension **popup** shows an **Update available** banner.
 
-### Option A — Download again (simplest)
+### Option A — Update now (recommended)
+
+1. Open the Drink Good popup.
+2. Click **Update now** and confirm.
+3. Choose the **same folder** you used for **Load unpacked** (Chrome asks once; later updates reuse it).
+4. The extension downloads `drink-good.zip`, overwrites that folder, and reloads itself.
+
+Use **Later** to snooze the banner for 7 days. **Release notes** opens the GitHub release page.
+
+If the folder grant is lost, open **Debug tools → Change install folder…** and pick the folder again.
+
+### Option B — Download again (manual)
 
 1. Download the new **`drink-good.zip`** from [Releases](https://github.com/alanchanlp224/drink-good/releases/latest) (same steps as install).
 2. Delete the **old files** inside your extension folder (or replace the whole folder).
 3. Unzip the new zip into the **same folder path** you used for **Load unpacked**.
 4. Go to **`chrome://extensions`** and click **Reload** on Drink Good.
 
-### Option B — Update script
+### Option C — Update script
 
 If you kept the downloaded repo or clone, you can run:
 
@@ -152,8 +163,8 @@ npm run test:vivino:live  # live Vivino API smoke test
 ### Publishing a release (maintainers)
 
 ```bash
-git tag v0.0.6
-git push origin v0.0.6
+git tag v0.0.7
+git push origin v0.0.7
 ```
 
 GitHub Actions builds **`drink-good.zip`** and attaches it to the release. Local packaging: `npm run package`.
