@@ -44,14 +44,27 @@ describe("pickVintage", () => {
 });
 
 describe("buildAlgoliaSearchQueries", () => {
-  it("cascades from full title to distilled producer + cuvée", () => {
+  it("uses full title then distilled without junk last-two fallbacks", () => {
     const queries = buildAlgoliaSearchQueries(
       "Jacques Lassaigne Blanc de Blancs Le Cotet",
     );
 
-    expect(queries[0]).toBe("Jacques Lassaigne Blanc de Blancs Le Cotet");
-    expect(queries).toContain("jacques lassaigne cotet");
-    expect(queries.at(-1)).toBe("lassaigne cotet");
+    expect(queries[0]).toContain("Jacques Lassaigne");
+    expect(queries.some((query) => /cotet/i.test(query))).toBe(true);
+    expect(queries.some((query) => query === "st jean")).toBe(false);
+    expect(queries.some((query) => /^jean claude jean$/i.test(query))).toBe(
+      false,
+    );
+    expect(queries.length).toBeLessThanOrEqual(2);
+  });
+
+  it("expands St / 1er in Ramonet Clos St Jean queries", () => {
+    const queries = buildAlgoliaSearchQueries(
+      "Jean Claude Ramonet Chassagne Montrachet 1er Cru Clos St Jean",
+    );
+    expect(queries[0].toLowerCase()).toContain("saint jean");
+    expect(queries[0].toLowerCase()).toContain("premier");
+    expect(queries).not.toContain("st jean");
   });
 
   it("distills champagne style and bottle size tokens", () => {

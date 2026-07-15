@@ -75,6 +75,12 @@ export function compareScoredCandidates(
     }
   }
 
+  // Prefer candidates covering shop BdB / BdN before other signals.
+  const styleDelta = right.breakdown.styleCoverage - left.breakdown.styleCoverage;
+  if (styleDelta !== 0) {
+    return styleDelta;
+  }
+
   if (
     left.breakdown.substringBoost >= 0.92 &&
     right.breakdown.substringBoost >= 0.92
@@ -98,20 +104,7 @@ export function compareScoredCandidates(
     return recallDelta;
   }
 
-  const ratingDelta =
-    (right.candidate.stats.ratingsAverage ?? 0) -
-    (left.candidate.stats.ratingsAverage ?? 0);
-  if (ratingDelta !== 0) {
-    return ratingDelta;
-  }
-
-  const countDelta =
-    (right.candidate.stats.ratingsCount ?? 0) -
-    (left.candidate.stats.ratingsCount ?? 0);
-  if (countDelta !== 0) {
-    return countDelta;
-  }
-
+  // Prefer cleaner name matches over popular but differently named siblings.
   const extraDelta =
     left.breakdown.extraDistinctiveTokens - right.breakdown.extraDistinctiveTokens;
   if (extraDelta !== 0) {
@@ -122,6 +115,20 @@ export function compareScoredCandidates(
     right.breakdown.tokenPrecision - left.breakdown.tokenPrecision;
   if (precisionDelta !== 0) {
     return precisionDelta;
+  }
+
+  const countDelta =
+    (right.candidate.stats.ratingsCount ?? 0) -
+    (left.candidate.stats.ratingsCount ?? 0);
+  if (countDelta !== 0) {
+    return countDelta;
+  }
+
+  const ratingDelta =
+    (right.candidate.stats.ratingsAverage ?? 0) -
+    (left.candidate.stats.ratingsAverage ?? 0);
+  if (ratingDelta !== 0) {
+    return ratingDelta;
   }
 
   return 0;

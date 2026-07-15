@@ -18,7 +18,11 @@ const DEFAULT_USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 /** Bump when cached Vivino match payloads change shape or scoring rules. */
-const VIVINO_CACHE_VERSION = 3;
+const VIVINO_CACHE_VERSION = 5;
+
+/** Stop cascade once we have enough candidates from a strong early query. */
+const ALGOLIA_EARLY_STOP_HITS = 8;
+const ALGOLIA_HITS_PER_PAGE = 10;
 
 export class VivinoClient {
   private readonly config: Required<
@@ -66,7 +70,7 @@ export class VivinoClient {
   }
 
   private cacheKey(query: NormalizedQuery): string {
-    return `${VIVINO_CACHE_VERSION}|${query.searchText}|${query.vintage ?? "nv"}`;
+    return `${VIVINO_CACHE_VERSION}|${query.searchText}|${query.vintage ?? "nv"}|${query.nonVintage ? "nvflag" : "yr"}`;
   }
 
   /**
@@ -122,7 +126,7 @@ export class VivinoClient {
       appId: this.config.algoliaAppId,
       apiKey: this.config.algoliaApiKey,
       index: this.config.algoliaIndex,
-      hitsPerPage: matcherConfigLimit(),
+      hitsPerPage: ALGOLIA_HITS_PER_PAGE,
     });
 
     if (algoliaCandidates.length > 0) {
@@ -155,10 +159,6 @@ export class VivinoClient {
   }
 }
 
-function matcherConfigLimit(): number {
-  return 15;
-}
-
 async function searchAlgoliaCascade(
   query: NormalizedQuery,
   options: Parameters<typeof searchAlgolia>[1] & {
@@ -172,7 +172,7 @@ async function searchAlgoliaCascade(
   const merged: VivinoSearchCandidate[] = [];
   const seenVintageIds = new Set<number>();
 
-  for (const searchQuery of searchQueries) {
+  for (const [index, searchQuery] of searchQueries.entries()) {
     const batch = await searchAlgolia(searchQuery, options);
     for (const candidate of batch) {
       if (seenVintageIds.has(candidate.vintageId)) {
@@ -182,7 +182,11 @@ async function searchAlgoliaCascade(
       merged.push(candidate);
     }
 
-    if (merged.length >= matcherConfigLimit()) {
+    // First query alone is often enough — avoid padding with weak fallbacks.
+    if (index === 0 && merged.length >= ALGOLIA_EARLY_STOP_HITS) {
+      break;
+    }
+    if (merged.length >= ALGOLIA_EARLY_STOP_HITS) {
       break;
     }
   }

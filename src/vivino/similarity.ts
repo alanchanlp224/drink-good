@@ -1,78 +1,53 @@
 /** String normalization and fuzzy name comparison for Vivino matching. */
 
+import { GENERIC_TOKENS, STOP_TOKENS } from "./token-vocab.js";
+
 const VINTAGE_PATTERN = /\b(19|20)\d{2}\b/;
 
-/** Appellation / region tokens — shared across many wines from one producer. */
-const GENERIC_TOKENS = new Set([
-  "aoc",
-  "bordeaux",
-  "bourgogne",
-  "brut",
-  "burgundy",
-  "champagne",
-  "chateau",
-  "chateauneuf",
-  "class",
-  "classe",
-  "classic",
-  "cotes",
-  "cru",
-  "doc",
-  "docg",
-  "domaine",
-  "dry",
-  "emilion",
-  "grand",
-  "igt",
-  "julien",
-  "margaux",
-  "medoc",
-  "nature",
-  "pape",
-  "pauillac",
-  "premier",
-  "reserve",
-  "reserva",
-  "rhone",
-  "rose",
-  "rouge",
-  "saint",
-  "sec",
-  "special",
-  "ste",
-  "sweet",
-  "tradition",
-]);
-
-const STOP_TOKENS = new Set([
-  "de",
-  "du",
-  "la",
-  "le",
-  "les",
-  "des",
-  "the",
-  "and",
-  "et",
-  "of",
-  "a",
-]);
+/** Soft penalty per unmatched distinctive cuvée token on the Vivino side. */
+const EXTRA_DISTINCTIVE_PENALTY = 0.05;
+const EXTRA_DISTINCTIVE_PENALTY_CAP = 0.15;
 
 /** Straight + typographic apostrophes and acute accents used as quotes on shop sites. */
 const APOSTROPHE_LIKE_PATTERN = /[\u0027\u0060\u00B4\u2018\u2019\u201A\u201B]/g;
 
+/**
+ * Expand common wine abbreviations so shop + Vivino tokens align.
+ * e.g. St → Saint, 1er → premier, BdB → Blanc de Blancs.
+ */
+export function expandWineAbbreviations(value: string): string {
+  return value
+    .replace(/\b1er\b/gi, "premier")
+    .replace(/\bgrd\b/gi, "grand")
+    .replace(/\bbdb\b/gi, "Blanc de Blancs")
+    .replace(/\bbdn\b/gi, "Blanc de Noirs")
+    // Singular shop typos: "Blanc de Blanc" → Blanc de Blancs
+    .replace(/\bblanc de blanc\b/gi, "Blanc de Blancs")
+    .replace(/\bblanc de noir\b/gi, "Blanc de Noirs")
+    .replace(/\b(st|ste)\.?\b/gi, "saint")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /** Strip accents and lower-case for comparison. */
 export function normalizeText(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .replace(APOSTROPHE_LIKE_PATTERN, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .replace(/\s+/g, " ")
-    .replace(/\bd ([a-z])/g, "d$1");
+  return expandWineAbbreviations(
+    value
+      .normalize("NFD")
+      .replace(/\p{M}/gu, "")
+      .toLowerCase()
+      .replace(APOSTROPHE_LIKE_PATTERN, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim()
+      .replace(/\s+/g, " ")
+      .replace(/\bd ([a-z])/g, "d$1"),
+  );
 }
+
+/** Soft penalty when shop declares BdB/BdN but Vivino candidate lacks that phrase. */
+const STYLE_MISS_PENALTY = 0.18;
+
+export type WineStylePhrase = "blanc_de_blancs" | "blanc_de_noirs";
 
 /** Composite match signals returned by {@link scoreNameMatch}. */
 export interface MatchScoreBreakdown {
@@ -84,6 +59,38 @@ export interface MatchScoreBreakdown {
   extraDistinctiveTokens: number;
   substringBoost: number;
   lengthPenalty: number;
+  /**
+   * 1 when shop has no BdB/BdN phrase, or candidate covers it.
+   * 0 when shop declares the phrase and candidate does not.
+   */
+  styleCoverage: number;
+}
+
+/** Detect Blanc de Blancs / Blanc de Noirs style phrases (after abbreviation expand). */
+export function detectStylePhrase(value: string): WineStylePhrase | null {
+  const normalized = normalizeText(value);
+  if (/\bblanc de blancs?\b/.test(normalized)) {
+    return "blanc_de_blancs";
+  }
+  if (/\bblanc de noirs?\b/.test(normalized)) {
+    return "blanc_de_noirs";
+  }
+  return null;
+}
+
+/** Whether a Vivino title covers the shop's style phrase. */
+export function hasStylePhraseCoverage(
+  candidate: string,
+  style: WineStylePhrase | null,
+): boolean {
+  if (style === null) {
+    return true;
+  }
+  const normalized = normalizeText(candidate);
+  if (style === "blanc_de_blancs") {
+    return /\bblanc de blancs?\b/.test(normalized);
+  }
+  return /\bblanc de noirs?\b/.test(normalized);
 }
 
 /** Extract a four-digit vintage year from free text. */
@@ -100,12 +107,12 @@ export function stripVintage(value: string): string {
   return value.replace(VINTAGE_PATTERN, " ").replace(/\s+/g, " ").trim();
 }
 
-const NON_VINTAGE_PATTERN = /\bN\.?\s*V\.?\b|\bnon[-\s]?vintage\b/gi;
+const NON_VINTAGE_SOURCE = String.raw`\bN\.?\s*V\.?\b|\bnon[-\s]?vintage\b`;
 
 /** Strip shop non-vintage markers (NV, N.V., non-vintage). */
 export function stripNonVintageMarkers(value: string): string {
   return value
-    .replace(NON_VINTAGE_PATTERN, " ")
+    .replace(new RegExp(NON_VINTAGE_SOURCE, "gi"), " ")
     .replace(/\s+([.,;:])/g, "$1")
     .replace(/[.,;:]+\s*$/g, "")
     .replace(/\s+/g, " ")
@@ -114,15 +121,18 @@ export function stripNonVintageMarkers(value: string): string {
 
 /** True when the raw shop title declares non-vintage (NV / N.V.). */
 export function hasNonVintageMarker(value: string): boolean {
-  return NON_VINTAGE_PATTERN.test(value);
+  // Fresh regex each call — avoids /g lastIndex sticky false negatives.
+  return new RegExp(NON_VINTAGE_SOURCE, "i").test(value);
 }
 
-/** Strip champagne dosage / style words shops add but Vivino often omits. */
+/**
+ * Strip champagne dosage words shops add but Vivino often omits.
+ * Keeps Blanc de Blancs / Blanc de Noirs — those are identity, not garnish.
+ */
 export function stripChampagneStyleMarkers(value: string): string {
   return value
-    .replace(/\bblanc de blancs\b/gi, " ")
     .replace(/\bbrut nature\b/gi, " ")
-    .replace(/\bextra brut\b/gi, " ")
+    .replace(/\bextra[\s-]?brut\b/gi, " ")
     .replace(/\bdemi[\s-]?sec\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -206,13 +216,15 @@ export function stripRedundantColorTokens(value: string): string {
 
 /** Normalize shop + Vivino titles before token similarity or search. */
 export function normalizeForMatch(value: string): string {
-  return stripRedundantColorTokens(
-    stripPackagingMarkers(
-      stripConditionMarkers(
-        stripBottleSizeMarkers(
-          stripChampagneStyleMarkers(
-            stripQuoteMarkers(
-              stripNonVintageMarkers(stripVintage(value)),
+  return expandWineAbbreviations(
+    stripRedundantColorTokens(
+      stripPackagingMarkers(
+        stripConditionMarkers(
+          stripBottleSizeMarkers(
+            stripChampagneStyleMarkers(
+              stripQuoteMarkers(
+                stripNonVintageMarkers(stripVintage(value)),
+              ),
             ),
           ),
         ),
@@ -221,14 +233,60 @@ export function normalizeForMatch(value: string): string {
   );
 }
 
+/**
+ * Tokenize for scoring: expand + normalize, drop stops, dedupe preserving order.
+ */
 function tokenize(value: string): string[] {
-  return normalizeText(value)
-    .split(" ")
-    .filter((token) => token.length > 1 && !STOP_TOKENS.has(token));
+  const seen = new Set<string>();
+  const tokens: string[] = [];
+  for (const token of normalizeText(value).split(" ")) {
+    if (token.length <= 1 || STOP_TOKENS.has(token) || seen.has(token)) {
+      continue;
+    }
+    seen.add(token);
+    tokens.push(token);
+  }
+  return tokens;
+}
+
+/** Tokens after "clos" or in BdB/BdN phrases stay distinctive/searchable. */
+function styleOrPlotProtectedTokens(tokens: string[]): Set<string> {
+  const protectedTokens = new Set<string>();
+  for (let index = 0; index < tokens.length - 1; index += 1) {
+    if (tokens[index] === "clos") {
+      protectedTokens.add(tokens[index + 1]);
+    }
+    if (
+      tokens[index] === "blanc" &&
+      (tokens[index + 1] === "blancs" ||
+        tokens[index + 1] === "noirs" ||
+        tokens[index + 1] === "noir")
+    ) {
+      protectedTokens.add("blanc");
+      protectedTokens.add(tokens[index + 1]);
+    }
+  }
+  // normalizeText keeps "de"; tokenize drops stop words — protect after join miss:
+  for (let index = 0; index < tokens.length - 2; index += 1) {
+    if (
+      tokens[index] === "blanc" &&
+      tokens[index + 1] === "de" &&
+      (tokens[index + 2] === "blancs" ||
+        tokens[index + 2] === "noirs" ||
+        tokens[index + 2] === "noir")
+    ) {
+      protectedTokens.add("blanc");
+      protectedTokens.add(tokens[index + 2]);
+    }
+  }
+  return protectedTokens;
 }
 
 function distinctiveTokens(tokens: string[]): string[] {
-  return tokens.filter((token) => !GENERIC_TOKENS.has(token));
+  const protectedTokens = styleOrPlotProtectedTokens(tokens);
+  return tokens.filter(
+    (token) => protectedTokens.has(token) || !GENERIC_TOKENS.has(token),
+  );
 }
 
 function tokenOverlapScore(
@@ -334,6 +392,7 @@ function emptyBreakdown(): MatchScoreBreakdown {
     extraDistinctiveTokens: 0,
     substringBoost: 0,
     lengthPenalty: 0,
+    styleCoverage: 1,
   };
 }
 
@@ -346,6 +405,7 @@ function perfectBreakdown(): MatchScoreBreakdown {
     extraDistinctiveTokens: 0,
     substringBoost: 0,
     lengthPenalty: 0,
+    styleCoverage: 1,
   };
 }
 
@@ -364,8 +424,11 @@ export function scoreNameMatch(
     return emptyBreakdown();
   }
 
+  const shopStyle = detectStylePhrase(query);
+  const styleCoverage = hasStylePhraseCoverage(candidate, shopStyle) ? 1 : 0;
+
   if (queryNorm === candidateNorm) {
-    return perfectBreakdown();
+    return { ...perfectBreakdown(), styleCoverage };
   }
 
   const queryTokens = tokenize(queryNorm);
@@ -379,7 +442,7 @@ export function scoreNameMatch(
   const { overlap, missing } = tokenOverlapScore(queryTokens, candidateTokens);
   const missingRatio = missing / queryTokens.length;
   if (missingRatio >= 0.34) {
-    return emptyBreakdown();
+    return { ...emptyBreakdown(), styleCoverage };
   }
 
   const tokenRecall = overlap / queryTokens.length;
@@ -410,9 +473,21 @@ export function scoreNameMatch(
   const base =
     tokenRecall * 0.5 + tokenPrecision * 0.25 + distinctiveRecall * 0.25;
 
-  let composite = base - lengthPenalty;
+  const extraPenalty = Math.min(
+    EXTRA_DISTINCTIVE_PENALTY_CAP,
+    extraDistinctiveTokens * EXTRA_DISTINCTIVE_PENALTY,
+  );
+
+  let composite = base - lengthPenalty - extraPenalty;
   if (substringBoost > 0) {
+    // Floor at substringBoost without re-applying extras — producer-only shop
+    // titles (e.g. d'Aiguilhe) must still rely on ratingsCount tie-breaks.
     composite = Math.max(composite, substringBoost);
+  }
+
+  // Prefer candidates that share the shop's BdB / BdN identity phrase.
+  if (shopStyle !== null && styleCoverage === 0) {
+    composite = Math.max(0, composite - STYLE_MISS_PENALTY);
   }
 
   return {
@@ -423,6 +498,7 @@ export function scoreNameMatch(
     extraDistinctiveTokens,
     substringBoost,
     lengthPenalty,
+    styleCoverage,
   };
 }
 

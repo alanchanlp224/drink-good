@@ -10,6 +10,8 @@ export class PageProcessor {
   private observer: MutationObserver | null = null;
   private activeChain: Promise<void> = Promise.resolve();
   private readonly stateListeners = new Set<() => void>();
+  private mutationDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private static readonly MUTATION_DEBOUNCE_MS = 300;
 
   constructor(
     private readonly adapter: RetailerAdapter,
@@ -97,7 +99,7 @@ export class PageProcessor {
       if (!this.running || shouldSuppressMutationHandling()) {
         return;
       }
-      void this.enqueueProcess();
+      this.scheduleProcessFromMutation();
     });
 
     this.observer.observe(target, { childList: true, subtree: true });
@@ -106,6 +108,24 @@ export class PageProcessor {
   private stopObserver(): void {
     this.observer?.disconnect();
     this.observer = null;
+    if (this.mutationDebounceTimer !== null) {
+      clearTimeout(this.mutationDebounceTimer);
+      this.mutationDebounceTimer = null;
+    }
+  }
+
+  /** Debounce DOM churn (infinite scroll) so we don't thrash Vivino searches. */
+  private scheduleProcessFromMutation(): void {
+    if (this.mutationDebounceTimer !== null) {
+      clearTimeout(this.mutationDebounceTimer);
+    }
+    this.mutationDebounceTimer = setTimeout(() => {
+      this.mutationDebounceTimer = null;
+      if (!this.running || shouldSuppressMutationHandling()) {
+        return;
+      }
+      this.enqueueProcess();
+    }, PageProcessor.MUTATION_DEBOUNCE_MS);
   }
 
   private enqueueProcess(): void {

@@ -1,11 +1,11 @@
-# Drink Good v0.0.5
+# Drink Good v0.0.6
 
 Chrome extension that overlays **Vivino scores and matched wine names** on supported wine shop product listings.
 
 ## Download
 
 1. Open **[Releases](https://github.com/alanchanlp224/drink-good/releases)** on GitHub.
-2. Click the **latest release** at the top (this release: **v0.0.5**).
+2. Click the **latest release** at the top (this release: **v0.0.6**).
 3. Scroll to **Assets**.
 4. Click **`drink-good.zip`** to download.
 5. Follow the [installation guide in README](https://github.com/alanchanlp224/drink-good#install-drink-good-chrome) (macOS and Windows).
@@ -25,20 +25,22 @@ Chrome extension that overlays **Vivino scores and matched wine names** on suppo
 
 Visit a supported shop, click the **burgundy wine-glass button** (bottom-right), and Vivino badges appear on product cards.
 
-## What's new in v0.0.5
+## What's new in v0.0.6
 
-### Vivino matching (major)
-- **Composite name scoring** with tie-breakers — fewer wrong cuvée picks (e.g. Les Quartz vs generic Châteauneuf).
-- **Apostrophe normalization** — Wineview curly apostrophes (`d'Armailhac`) match correctly.
-- **Condition notes stripped** — `(damage label)` and similar shop notes no longer block matches.
-- **All-vintage score fallback** — when a young vintage has no published average, shows wine-wide score with **(All Vintage)** in the badge.
-- **NV / champagne fixes** — U.V. wines no longer dropped from Algolia; distilled search queries and multi-step Algolia cascade; style tokens (`brut nature`, `blanc de blancs`) and bottle sizes (`Magnum 1.5L`) stripped for search and scoring.
-- **Re-run refreshes badges** — starting a new run clears stale badges and Vivino session cache.
+### Champagne style matching
+- **Keeps Blanc de Blancs / Blanc de Noirs** as identity — no longer strips them during name matching (fixes under-specified titles collapsing to popular sibling cuvées).
+- **Expands abbreviations** — `BdB` → Blanc de Blancs, `BdN` → Blanc de Noirs, `Grd` → grand; singular Blanc de Blanc(s) normalized.
+- **Style coverage preference** — candidates missing the shop’s BdB/BdN phrase are penalized and lose tie-breaks.
+- **Dosage still stripped** — brut nature / extra brut / demi-sec remain garnish for search and scoring.
+- **Plot + style token protection** — Clos plot names and blanc tokens stay distinctive in Algolia distillation.
+- **Saint / 1er synonyms** — `st`/`ste` → saint, `1er` → premier (e.g. Clos St Jean).
+- **Cascade trimmed** — Algolia cascade is full title + distilled only; cache version bumped.
 
 ### Examples fixed in this release
-- d'Armailhac 1993, Lafon Rochet 1989 (damage label), d'Aiguilhe 2014
-- La Chapelle de La Mission Haut-Brion 2023 (all-vintage 4.2)
-- Jacques Lassaigne Le Cotet NV (incl. Magnum)
+- Nicolas Feuillatte Blanc de Blancs 2019 (stays in BdB family — not Palmes d’Or)
+- Pol Roger Blanc de Blancs 2016
+- Jean-Claude Ramonet Clos St Jean (vs Clos du Cailleret)
+- Jacques Lassaigne Le Cotet NV / Magnum
 - Benoit Dehu Initiation Brut Nature NV
 
 ## Upgrading from an earlier release
@@ -52,4 +54,4 @@ Or download `drink-good.zip` again and overwrite the same folder manually.
 
 ## Full changelog
 
-https://github.com/alanchanlp224/drink-good/compare/v0.0.4...v0.0.5
+https://github.com/alanchanlp224/drink-good/compare/v0.0.5...v0.0.6

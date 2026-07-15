@@ -18,6 +18,8 @@ export {
   formatVivinoScore,
   scoreNameMatch,
   stripConditionMarkers,
+  expandWineAbbreviations,
+  hasNonVintageMarker,
   type MatchScoreBreakdown,
 } from "./similarity.js";
 export { buildVivinoUrl } from "./url.js";

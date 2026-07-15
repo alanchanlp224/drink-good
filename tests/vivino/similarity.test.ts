@@ -13,6 +13,7 @@ import {
   stripNonVintageMarkers,
   stripPackagingMarkers,
   stripRedundantColorTokens,
+  hasNonVintageMarker,
 } from "../../src/vivino/similarity";
 import type { VivinoSearchCandidate } from "../../src/vivino/types";
 
@@ -147,10 +148,22 @@ describe("normalizeForMatch", () => {
   it("strips champagne style and bottle size markers", () => {
     expect(
       normalizeForMatch("Jacques Lassaigne Blanc de Blancs Le Cotet NV Magnum 1.5L"),
-    ).toBe("Jacques Lassaigne Le Cotet");
+    ).toBe("Jacques Lassaigne Blanc de Blancs Le Cotet");
     expect(
       normalizeForMatch("Benoit Dehu 'Initiation' Brut Nature NV"),
     ).toBe("Benoit Dehu Initiation");
+  });
+
+  it("keeps Blanc de Blancs and expands BdB abbreviation", () => {
+    expect(normalizeForMatch("Nicolas Feuillatte, Blanc de Blancs 2019")).toBe(
+      "Nicolas Feuillatte, Blanc de Blancs",
+    );
+    expect(normalizeForMatch("Pol Roger Blanc de Blancs 2016")).toBe(
+      "Pol Roger Blanc de Blancs",
+    );
+    expect(normalizeForMatch("Pertois Moriset Les Quatre Terroirs BdB Grd Cru NV")).toBe(
+      "Pertois Moriset Les Quatre Terroirs Blanc de Blancs grand Cru",
+    );
   });
 
   it("strips flute gift sets from shop titles", () => {
@@ -371,6 +384,126 @@ describe("pickBestMatch — cuvée vs generic (Phases A–C)", () => {
       ).composite,
     ).toBeGreaterThan(0.72);
   });
+
+  it("picks Clos Saint-Jean over Clos du Cailleret for St Jean shop title", () => {
+    const query = buildNormalizedQuery(
+      "Jean Claude Ramonet Chassagne Montrachet 1er Cru 'Clos St Jean' 2022",
+    );
+    const saintJean: VivinoSearchCandidate = {
+      wineId: 1298739,
+      vintageId: 1,
+      matchedName:
+        "Jean-Claude Ramonet Chassagne-Montrachet Premier Cru 'Clos Saint-Jean' 2022",
+      vintage: 2022,
+      stats: { ratingsAverage: 4.3, ratingsCount: 1143 },
+      vivinoUrl: "https://www.vivino.com/w/1298739?year=2022",
+      winery: "Jean-Claude Ramonet",
+      source: "algolia",
+    };
+    const cailleret: VivinoSearchCandidate = {
+      wineId: 5016284,
+      vintageId: 2,
+      matchedName:
+        "Jean-Claude Ramonet Chassagne-Montrachet Premier Cru 'Clos du Cailleret' Monopole 2022",
+      vintage: 2022,
+      stats: { ratingsAverage: 4.5, ratingsCount: 828 },
+      vivinoUrl: "https://www.vivino.com/w/5016284?year=2022",
+      winery: "Jean-Claude Ramonet",
+      source: "algolia",
+    };
+
+    const saintScore = scoreNameMatch(query.rawNormalized, saintJean.matchedName);
+    const cailleretScore = scoreNameMatch(
+      query.rawNormalized,
+      cailleret.matchedName,
+    );
+    expect(saintScore.composite).toBeGreaterThan(cailleretScore.composite);
+    expect(saintScore.extraDistinctiveTokens).toBeLessThan(
+      cailleretScore.extraDistinctiveTokens,
+    );
+
+    const result = pickBestMatch(query, [cailleret, saintJean]);
+    expect(result.status).toBe("matched");
+    if (result.status === "matched") {
+      expect(result.candidate.wineId).toBe(1298739);
+    }
+  });
+
+  it("hasNonVintageMarker is stable across repeated calls", () => {
+    const title = "Pol Roger Brut Reserve NV";
+    expect(hasNonVintageMarker(title)).toBe(true);
+    expect(hasNonVintageMarker(title)).toBe(true);
+    expect(hasNonVintageMarker("Lynch Bages 2019")).toBe(false);
+    expect(hasNonVintageMarker("Lynch Bages 2019")).toBe(false);
+  });
+
+  it("prefers Blanc de Blancs wines over other Feuillatte cuvées", () => {
+    const query = buildNormalizedQuery("Nicolas Feuillatte, Blanc de Blancs 2019");
+    const collection: VivinoSearchCandidate = {
+      wineId: 6266015,
+      vintageId: 1,
+      matchedName:
+        "Nicolas Feuillatte Collection Vintage Blanc de Blancs Brut Millésimé Champagne 2019",
+      vintage: 2019,
+      stats: { ratingsAverage: 4.1, ratingsCount: 489 },
+      vivinoUrl: "https://www.vivino.com/w/6266015?year=2019",
+      winery: "Nicolas Feuillatte",
+      source: "algolia",
+    };
+    const palmes: VivinoSearchCandidate = {
+      wineId: 1178743,
+      vintageId: 2,
+      matchedName: "Nicolas Feuillatte Palmes d'Or Brut Champagne 2019",
+      vintage: 2019,
+      stats: { ratingsAverage: 4.4, ratingsCount: 2000 },
+      vivinoUrl: "https://www.vivino.com/w/1178743?year=2019",
+      winery: "Nicolas Feuillatte",
+      source: "algolia",
+    };
+
+    expect(scoreNameMatch(query.rawNormalized, collection.matchedName).styleCoverage).toBe(
+      1,
+    );
+    expect(scoreNameMatch(query.rawNormalized, palmes.matchedName).styleCoverage).toBe(
+      0,
+    );
+
+    const result = pickBestMatch(query, [palmes, collection]);
+    expect(result.status).toBe("matched");
+    if (result.status === "matched") {
+      expect(result.candidate.wineId).toBe(6266015);
+    }
+  });
+
+  it("prefers Pol Roger Blanc de Blancs over Demi-Sec sibling", () => {
+    const query = buildNormalizedQuery("Pol Roger Blanc de Blancs 2016");
+    const bdb: VivinoSearchCandidate = {
+      wineId: 1649156,
+      vintageId: 1,
+      matchedName: "Pol Roger Blanc de Blancs Champagne 2016",
+      vintage: 2016,
+      stats: { ratingsAverage: 4.1, ratingsCount: 209 },
+      vivinoUrl: "https://www.vivino.com/w/1649156?year=2016",
+      winery: "Pol Roger",
+      source: "algolia",
+    };
+    const demi: VivinoSearchCandidate = {
+      wineId: 5991123,
+      vintageId: 2,
+      matchedName: "Pol Roger Rich Demi-Sec Champagne (Extra Cuvée de Réserve) 2016",
+      vintage: 2016,
+      stats: { ratingsAverage: 4.0, ratingsCount: 5000 },
+      vivinoUrl: "https://www.vivino.com/w/5991123?year=2016",
+      winery: "Pol Roger",
+      source: "algolia",
+    };
+
+    const result = pickBestMatch(query, [demi, bdb]);
+    expect(result.status).toBe("matched");
+    if (result.status === "matched") {
+      expect(result.candidate.wineId).toBe(1649156);
+    }
+  });
 });
 
 describe("compareScoredCandidates — tie-breakers (Phase C)", () => {
@@ -385,6 +518,7 @@ describe("compareScoredCandidates — tie-breakers (Phase C)", () => {
         extraDistinctiveTokens: 0,
         substringBoost: 0,
         lengthPenalty: 0.1,
+        styleCoverage: 1,
       },
     };
     const right = {
