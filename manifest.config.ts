@@ -39,6 +39,8 @@ export default defineManifest({
         "*://www.xtrawine.com/*",
         "*://kingswine.hk/*",
         "*://www.kingswine.hk/*",
+        "*://lyndhurstwine.com/*",
+        "*://www.lyndhurstwine.com/*",
       ],
       js: ["src/content/main.ts"],
       run_at: "document_idle",
@@ -66,5 +68,7 @@ export default defineManifest({
     "*://www.xtrawine.com/*",
     "*://kingswine.hk/*",
     "*://www.kingswine.hk/*",
+    "*://lyndhurstwine.com/*",
+    "*://www.lyndhurstwine.com/*",
   ],
 });

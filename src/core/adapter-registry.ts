@@ -3,6 +3,7 @@
 import type { RetailerAdapter } from "./adapter";
 import { cruAdapter } from "../adapters/cru";
 import { kingswineAdapter } from "../adapters/kingswine";
+import { lyndhurstAdapter } from "../adapters/lyndhurst";
 import { remflyAdapter } from "../adapters/remfly";
 import { rngwineAdapter } from "../adapters/rngwine";
 import { tencellarsAdapter } from "../adapters/tencellars";
@@ -19,6 +20,7 @@ const adapters: RetailerAdapter[] = [
   tencellarsAdapter,
   xtrawineAdapter,
   kingswineAdapter,
+  lyndhurstAdapter,
 ];
 
 export function getAdapterForUrl(url: string): RetailerAdapter | null {

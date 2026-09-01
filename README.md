@@ -2,7 +2,7 @@
 
 Chrome extension (Manifest V3) that overlays **Vivino scores and matched wine names** on wine retailer product listings.
 
-**Version:** 0.0.7
+**Version:** 0.0.8
 
 ## Supported wine shops
 
@@ -16,6 +16,7 @@ Chrome extension (Manifest V3) that overlays **Vivino scores and matched wine na
 | Ten Cellars | [tencellars.hk](https://www.tencellars.hk/) |
 | XtraWine | [xtrawine.com](https://www.xtrawine.com/) |
 | King's Wine Cellar | [kingswine.hk](https://kingswine.hk/) |
+| Lyndhurst Wine | [lyndhurstwine.com](https://lyndhurstwine.com/) |
 
 Open any supported shop in Chrome, click the **burgundy wine-glass button** (bottom-right corner), and Vivino badges appear on each product. Click a badge to open the matched wine on Vivino. Click the button again to stop scanning.
 
@@ -29,7 +30,7 @@ You do **not** need to write code or install Node.js. These steps assume you hav
 
 1. Open the Drink Good releases page:  
    **https://github.com/alanchanlp224/drink-good/releases**
-2. At the top of the list, click the **latest release** (for example **v0.0.7**).  
+2. At the top of the list, click the **latest release** (for example **v0.0.8**).  
    Do **not** download the source code (Source code zip/tar.gz) — that is for developers only.
 3. Scroll down to the **Assets** section.
 4. Click **`drink-good.zip`** to download it.  
@@ -88,6 +89,7 @@ You should see buttons such as **Load unpacked**, **Pack extension**, and **Upda
 
 1. Visit a supported site, for example:  
    [Wineview red wine](https://wineview.com.hk/product-category/wine-shop/red-wine/)  
+   or [Lyndhurst Red Wines](https://lyndhurstwine.com/collections/red-wines)  
    or [King's Wine Bordeaux](https://kingswine.hk/collections/bordeaux)
 2. Click the **burgundy wine-glass button** at the bottom-right of the page.
 3. Wait a few seconds — Vivino score badges appear on product cards.
@@ -163,8 +165,8 @@ npm run test:vivino:live  # live Vivino API smoke test
 ### Publishing a release (maintainers)
 
 ```bash
-git tag v0.0.7
-git push origin v0.0.7
+git tag v0.0.8
+git push origin v0.0.8
 ```
 
 GitHub Actions builds **`drink-good.zip`** and attaches it to the release. Local packaging: `npm run package`.

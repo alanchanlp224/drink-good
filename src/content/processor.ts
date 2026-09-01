@@ -92,7 +92,7 @@ export class PageProcessor {
 
     const target =
       document.querySelector(
-        "ul.products, .products, main, #content, app-root, mat-table, .data.desktop, ww-product-list, cx-product-list, cx-storefront, .ProductList-list, .ProductList-content, .adminProductList, .product-container, .wine-list, .wine-showcase, #ProductGridContainer, .algolia-product-grid, product-info, .product-grid, .grid-product",
+        "ul.products, .products, main, #content, app-root, mat-table, .data.desktop, ww-product-list, cx-product-list, cx-storefront, .ProductList-list, .ProductList-content, .adminProductList, .product-container, .wine-list, .wine-showcase, #ProductGridContainer, .algolia-product-grid, product-info, .product-grid, .grid-product, .collection-products, product-card",
       ) ?? document.body;
 
     this.observer = new MutationObserver(() => {
