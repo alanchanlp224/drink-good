@@ -1,7 +1,9 @@
 /** Registry of retailer adapters — add new shops here. */
 
 import type { RetailerAdapter } from "./adapter";
+import { cotedorAdapter } from "../adapters/cotedor";
 import { cruAdapter } from "../adapters/cru";
+import { ginsbergchanAdapter } from "../adapters/ginsbergchan";
 import { kingswineAdapter } from "../adapters/kingswine";
 import { lyndhurstAdapter } from "../adapters/lyndhurst";
 import { remflyAdapter } from "../adapters/remfly";
@@ -9,6 +11,7 @@ import { rngwineAdapter } from "../adapters/rngwine";
 import { tencellarsAdapter } from "../adapters/tencellars";
 import { watsonswineAdapter } from "../adapters/watsonswine";
 import { xtrawineAdapter } from "../adapters/xtrawine";
+import { winecoupleAdapter } from "../adapters/winecouple";
 import { wineviewAdapter } from "../adapters/wineview";
 
 const adapters: RetailerAdapter[] = [
@@ -21,6 +24,9 @@ const adapters: RetailerAdapter[] = [
   xtrawineAdapter,
   kingswineAdapter,
   lyndhurstAdapter,
+  winecoupleAdapter,
+  ginsbergchanAdapter,
+  cotedorAdapter,
 ];
 
 export function getAdapterForUrl(url: string): RetailerAdapter | null {

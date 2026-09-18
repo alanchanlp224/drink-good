@@ -1,11 +1,11 @@
-# Drink Good v0.0.8
+# Drink Good v0.0.11
 
 Chrome extension that overlays **Vivino scores and matched wine names** on supported wine shop product listings.
 
 ## Download
 
 1. Open **[Releases](https://github.com/alanchanlp224/drink-good/releases)** on GitHub.
-2. Click the **latest release** at the top (this release: **v0.0.8**).
+2. Click the **latest release** at the top (this release: **v0.0.11**).
 3. Scroll to **Assets**.
 4. Click **`drink-good.zip`** to download.
 5. Follow the [installation guide in README](https://github.com/alanchanlp224/drink-good#install-drink-good-chrome) (macOS and Windows).
@@ -23,14 +23,17 @@ Chrome extension that overlays **Vivino scores and matched wine names** on suppo
 | XtraWine | [xtrawine.com](https://www.xtrawine.com/) |
 | King's Wine Cellar | [kingswine.hk](https://kingswine.hk/) |
 | Lyndhurst Wine | [lyndhurstwine.com](https://lyndhurstwine.com/) |
+| Wine Couple | [winecouple.hk](https://www.winecouple.hk/) |
+| Ginsberg+Chan | [ginsbergchan.com](https://ginsbergchan.com/) |
+| Cote d'Or Fine Wines | [cotedorfinewines.com](https://cotedorfinewines.com/) |
 
 Visit a supported shop, click the **burgundy wine-glass button** (bottom-right), and Vivino badges appear on product cards.
 
-## What's new in v0.0.8
+## What's new in v0.0.11
 
-### Lyndhurst Wine support
-- New retailer adapter for [lyndhurstwine.com](https://lyndhurstwine.com/) (Shopify product-card grid + PDP).
-- Badge placement fixed for Lyndhurst’s nested price/hover layout — badges render under the visible product title instead of failing silently.
+### Cote d'Or Fine Wines support
+- New retailer adapter for [cotedorfinewines.com](https://cotedorfinewines.com/) (Flatsome product grid + product pages).
+- Case sizes such as `6x75cl` are removed before Vivino search so the match uses the wine name and vintage.
 
 ## Upgrading from an earlier release
 
@@ -46,4 +49,4 @@ Or download `drink-good.zip` again and overwrite the same folder manually.
 
 ## Full changelog
 
-https://github.com/alanchanlp224/drink-good/compare/v0.0.7...v0.0.8
+https://github.com/alanchanlp224/drink-good/compare/v0.0.10...v0.0.11
