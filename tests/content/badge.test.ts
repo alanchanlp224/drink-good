@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi, afterEach } from "vitest";
 import { wineviewBadgeAdapter } from "../../src/adapters/wineview-badge";
 import { xtrawineBadgeAdapter } from "../../src/adapters/xtrawine-badge";
 import {
@@ -45,6 +45,10 @@ describe("badge", () => {
   beforeEach(() => {
     document.body.innerHTML = wineviewCardHtml();
     injectBadgeStyles();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("renders matched badge without throwing (closed shadow root)", () => {
@@ -115,6 +119,84 @@ describe("badge", () => {
     expect(markup).not.toContain("(8944)");
   });
 
+  it("adds a Hong Kong Wine-Searcher icon on a matched badge", () => {
+    const title = document.querySelector<HTMLElement>(
+      ".woocommerce-loop-product__title",
+    )!;
+    renderBadge(title, MATCHED_RESULT, wineviewBadgeAdapter);
+
+    const search = document.querySelector<HTMLAnchorElement>(
+      "[data-drink-good-wine-searcher]",
+    );
+    expect(search?.getAttribute("aria-label")).toBe("Search this wine on Wine-Searcher");
+    expect(search?.getAttribute("href")).toBe(
+      "https://www.wine-searcher.com/find/Ch%C3%A2teau+Lynch-Bages/2019/hong+kong",
+    );
+    expect(search?.querySelector("svg")).not.toBeNull();
+  });
+
+  it("opens Wine-Searcher from the icon and Vivino from the score", () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    const title = document.querySelector<HTMLElement>(
+      ".woocommerce-loop-product__title",
+    )!;
+    renderBadge(title, MATCHED_RESULT, wineviewBadgeAdapter);
+
+    const search = document.querySelector<HTMLAnchorElement>(
+      "[data-drink-good-wine-searcher]",
+    )!;
+    search.dispatchEvent(
+      new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }),
+    );
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(open).toHaveBeenCalledWith(
+      "https://www.wine-searcher.com/find/Ch%C3%A2teau+Lynch-Bages/2019/hong+kong",
+      "_blank",
+      "noopener,noreferrer",
+    );
+
+    open.mockClear();
+    const badge = document.querySelector<HTMLElement>("[data-drink-good-badge]")!;
+    badge.getBoundingClientRect = () =>
+      ({
+        x: 10,
+        y: 10,
+        left: 10,
+        top: 10,
+        right: 200,
+        bottom: 40,
+        width: 190,
+        height: 30,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    search.getBoundingClientRect = () =>
+      ({
+        x: 180,
+        y: 14,
+        left: 180,
+        top: 14,
+        right: 196,
+        bottom: 30,
+        width: 16,
+        height: 16,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    badge.dispatchEvent(
+      new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        clientX: 40,
+        clientY: 20,
+      }),
+    );
+    expect(open).toHaveBeenCalledWith(
+      "https://www.vivino.com/wines/1",
+      "_blank",
+      "noopener,noreferrer",
+    );
+  });
+
   it("renders unknown match badge", () => {
     const title = document.querySelector<HTMLElement>(
       ".woocommerce-loop-product__title",
@@ -131,6 +213,7 @@ describe("badge", () => {
     );
 
     expect(hasBadge(title, wineviewBadgeAdapter)).toBe(true);
+    expect(document.querySelector("[data-drink-good-wine-searcher]")).toBeNull();
   });
 
   it("removeAllPageBadges clears every badge on the page", () => {

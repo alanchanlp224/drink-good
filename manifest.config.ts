@@ -47,6 +47,8 @@ export default defineManifest({
         "*://www.ginsbergchan.com/*",
         "*://cotedorfinewines.com/*",
         "*://www.cotedorfinewines.com/*",
+        "*://vinobuzz.ai/*",
+        "*://www.vinobuzz.ai/*",
       ],
       js: ["src/content/main.ts"],
       run_at: "document_idle",
@@ -82,5 +84,7 @@ export default defineManifest({
     "*://www.ginsbergchan.com/*",
     "*://cotedorfinewines.com/*",
     "*://www.cotedorfinewines.com/*",
+    "*://vinobuzz.ai/*",
+    "*://www.vinobuzz.ai/*",
   ],
 });

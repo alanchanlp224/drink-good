@@ -9,9 +9,12 @@ import {
 } from "../shared/score-style";
 import { formatVivinoScore } from "../vivino/similarity";
 import type { ScoreScope, VivinoMatchResult } from "../vivino/types";
+import { buildWineSearcherUrl, WINE_SEARCHER_ICON_SVG } from "./wine-searcher";
 
 const BADGE_CLASS = "drink-good-badge";
 const BADGE_ATTR = "data-drink-good-badge";
+const WINE_SEARCHER_ATTR = "data-drink-good-wine-searcher";
+const WINE_SEARCHER_SLOT = "wine-searcher";
 
 let suppressMutationHandling = false;
 
@@ -116,13 +119,7 @@ function armBadgeClickGuard(
 
       const path = event.composedPath();
       const rect = badgeHost.getBoundingClientRect();
-      const inBadgeBounds =
-        rect.width > 0 &&
-        rect.height > 0 &&
-        event.clientX >= rect.left &&
-        event.clientX <= rect.right &&
-        event.clientY >= rect.top &&
-        event.clientY <= rect.bottom;
+      const inBadgeBounds = pointInRect(event.clientX, event.clientY, rect);
 
       if (!inBadgeBounds && !path.includes(badgeHost)) {
         return;
@@ -131,9 +128,47 @@ function armBadgeClickGuard(
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
-      window.open(vivinoUrl, "_blank", "noopener,noreferrer");
+      const destination = wineSearcherDestination(badgeHost, path, event) ?? vivinoUrl;
+      window.open(destination, "_blank", "noopener,noreferrer");
     },
     true,
+  );
+}
+
+/**
+ * Wine-Searcher control is a light-DOM child slotted into the badge.
+ * The card click guard cannot see nodes inside the closed shadow root, so the
+ * icon has to stay outside it to open Wine-Searcher instead of Vivino.
+ */
+function wineSearcherDestination(
+  badgeHost: HTMLElement,
+  path: EventTarget[],
+  event: MouseEvent,
+): string | null {
+  const fromPath = path.find(
+    (node): node is HTMLAnchorElement =>
+      node instanceof HTMLAnchorElement && node.matches(`[${WINE_SEARCHER_ATTR}]`),
+  );
+  if (fromPath?.href) {
+    return fromPath.href;
+  }
+
+  const searchLink = badgeHost.querySelector<HTMLAnchorElement>(`[${WINE_SEARCHER_ATTR}]`);
+  if (!searchLink?.href) {
+    return null;
+  }
+  const rect = searchLink.getBoundingClientRect();
+  return pointInRect(event.clientX, event.clientY, rect) ? searchLink.href : null;
+}
+
+function pointInRect(x: number, y: number, rect: DOMRect): boolean {
+  return (
+    rect.width > 0 &&
+    rect.height > 0 &&
+    x >= rect.left &&
+    x <= rect.right &&
+    y >= rect.top &&
+    y <= rect.bottom
   );
 }
 
@@ -148,10 +183,15 @@ function buildMatchedBadge(
   const reviewCount = result.candidate.stats.ratingsCount;
   const scoreScope = result.candidate.stats.scoreScope ?? "vintage";
   const vivinoUrl = result.candidate.vivinoUrl;
+  const wineSearcherUrl = buildWineSearcherUrl(wineName, result.candidate.vintage);
 
   const { host, shadow } = createBadgeHost(`${BADGE_CLASS}--${style.id}`);
 
+  const row = document.createElement("div");
+  row.className = "badge-row";
+
   const link = document.createElement("a");
+  link.className = "vivino-link";
   link.href = vivinoUrl;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
@@ -162,11 +202,59 @@ function buildMatchedBadge(
     event.stopPropagation();
     window.open(vivinoUrl, "_blank", "noopener,noreferrer");
   });
+  row.appendChild(link);
+
+  if (wineSearcherUrl) {
+    row.appendChild(createWineSearcherSlot());
+    host.appendChild(createWineSearcherLink(wineSearcherUrl));
+  }
 
   shadow.appendChild(createBadgeStyle(style.accent, display));
-  shadow.appendChild(link);
+  shadow.appendChild(row);
 
   return host;
+}
+
+function createWineSearcherSlot(): HTMLSlotElement {
+  const slot = document.createElement("slot");
+  slot.name = WINE_SEARCHER_SLOT;
+  return slot;
+}
+
+function createWineSearcherLink(url: string): HTMLAnchorElement {
+  const link = document.createElement("a");
+  link.slot = WINE_SEARCHER_SLOT;
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.title = "Hong Kong prices on Wine-Searcher";
+  link.setAttribute("aria-label", "Search this wine on Wine-Searcher");
+  link.setAttribute(WINE_SEARCHER_ATTR, "true");
+  link.innerHTML = WINE_SEARCHER_ICON_SVG;
+  styleWineSearcherLink(link);
+  return link;
+}
+
+function styleWineSearcherLink(link: HTMLAnchorElement): void {
+  const important: Record<string, string> = {
+    flex: "0 0 auto",
+    display: "inline-flex",
+    width: "16px",
+    height: "16px",
+    margin: "0",
+    padding: "0",
+    border: "none",
+    background: "transparent",
+    "line-height": "0",
+    "text-decoration": "none",
+    cursor: "pointer",
+    position: "relative",
+    "z-index": "4",
+    "pointer-events": "auto",
+  };
+  for (const [property, value] of Object.entries(important)) {
+    link.style.setProperty(property, value, "important");
+  }
 }
 
 function buildUnknownBadge(
@@ -222,15 +310,37 @@ function createBadgeStyle(
       line-height: 1.4;
     }
     .badge,
-    a {
-      display: ${innerDisplay};
-      width: ${innerWidth};
+    .badge-row {
       box-sizing: border-box;
+      width: ${innerWidth};
       padding: ${display.padding};
       border-radius: ${display.borderRadiusPx}px;
       background: ${scoreBadgeBackground(accent)};
       color: ${accent};
       border: 1px solid ${scoreBadgeBorder(accent)};
+      font: inherit;
+      line-height: inherit;
+      cursor: pointer;
+    }
+    .badge {
+      display: ${innerDisplay};
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .badge-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .vivino-link {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      color: inherit;
       font: inherit;
       line-height: inherit;
       text-decoration: none;
@@ -240,10 +350,11 @@ function createBadgeStyle(
       cursor: pointer;
       transition: opacity 150ms ease;
     }
-    a:hover {
+    .vivino-link:hover {
       opacity: 0.9;
     }
-    a:focus-visible {
+    .vivino-link:focus-visible,
+    ::slotted(a:focus-visible) {
       outline: 2px solid #fbbf24;
       outline-offset: 2px;
     }
@@ -255,7 +366,7 @@ function createBadgeStyle(
       color: inherit;
     }
     @media (prefers-reduced-motion: reduce) {
-      a {
+      .vivino-link {
         transition: none;
       }
     }

@@ -20,8 +20,9 @@ Chrome extension (Manifest V3) that overlays **Vivino scores and matched wine na
 | Wine Couple | [winecouple.hk](https://www.winecouple.hk/) |
 | Ginsberg+Chan | [ginsbergchan.com](https://ginsbergchan.com/) |
 | Cote d'Or Fine Wines | [cotedorfinewines.com](https://cotedorfinewines.com/) |
+| VinoBuzz | [vinobuzz.ai](https://vinobuzz.ai/marketplace) |
 
-Open any supported shop in Chrome, click the **burgundy wine-glass button** (bottom-right corner), and Vivino badges appear on each product. Click a badge to open the matched wine on Vivino. Click the button again to stop scanning.
+Open any supported shop in Chrome, click the **burgundy wine-glass button** (bottom-right corner), and Vivino badges appear on each product. Click the score or wine name on a badge to open the match on Vivino. The black glass icon at the right end of a matched badge opens Hong Kong prices for that wine on Wine-Searcher. Click the burgundy button again to stop scanning.
 
 ---
 
@@ -96,6 +97,7 @@ You should see buttons such as **Load unpacked**, **Pack extension**, and **Upda
    or [Wine Couple French Terroir](https://www.winecouple.hk/categories/frenchwines-terroircollection)  
    or [Ginsberg+Chan Red](https://ginsbergchan.com/collections/red)  
    or [Cote d'Or Bordeaux](https://cotedorfinewines.com/fine-wine/?adv_search=wc&post_type=product&val%5B0%5D=bordeaux)  
+   or [VinoBuzz marketplace](https://vinobuzz.ai/marketplace)
    or [King's Wine Bordeaux](https://kingswine.hk/collections/bordeaux)
 2. Click the **burgundy wine-glass button** at the bottom-right of the page.
 3. Wait a few seconds — Vivino score badges appear on product cards.

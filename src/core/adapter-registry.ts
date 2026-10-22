@@ -11,6 +11,7 @@ import { rngwineAdapter } from "../adapters/rngwine";
 import { tencellarsAdapter } from "../adapters/tencellars";
 import { watsonswineAdapter } from "../adapters/watsonswine";
 import { xtrawineAdapter } from "../adapters/xtrawine";
+import { vinobuzzAdapter } from "../adapters/vinobuzz";
 import { winecoupleAdapter } from "../adapters/winecouple";
 import { wineviewAdapter } from "../adapters/wineview";
 
@@ -27,6 +28,7 @@ const adapters: RetailerAdapter[] = [
   winecoupleAdapter,
   ginsbergchanAdapter,
   cotedorAdapter,
+  vinobuzzAdapter,
 ];
 
 export function getAdapterForUrl(url: string): RetailerAdapter | null {
