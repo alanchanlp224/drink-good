@@ -2,7 +2,7 @@
 
 Chrome extension (Manifest V3) that overlays **Vivino scores and matched wine names** on wine retailer product listings.
 
-**Version:** 0.0.11
+**Version:** 0.0.14
 
 ## Supported wine shops
 
@@ -34,7 +34,7 @@ You do **not** need to write code or install Node.js. These steps assume you hav
 
 1. Open the Drink Good releases page:  
    **https://github.com/alanchanlp224/drink-good/releases**
-2. At the top of the list, click the **latest release** (for example **v0.0.11**).  
+2. At the top of the list, click the **latest release** (for example **v0.0.14**).  
    Do **not** download the source code (Source code zip/tar.gz) — that is for developers only.
 3. Scroll down to the **Assets** section.
 4. Click **`drink-good.zip`** to download it.  
@@ -173,8 +173,8 @@ npm run test:vivino:live  # live Vivino API smoke test
 ### Publishing a release (maintainers)
 
 ```bash
-git tag v0.0.11
-git push origin v0.0.11
+git tag v0.0.14
+git push origin v0.0.14
 ```
 
 GitHub Actions builds **`drink-good.zip`** and attaches it to the release. Local packaging: `npm run package`.
@@ -198,7 +198,7 @@ See [RELEASE_NOTES.md](./RELEASE_NOTES.md) for the current release notes.
 | **Content** | Gold star + Vivino score + review count + full matched Vivino name |
 | **Colors** | Score-based tint (green >4.0, amber 3.5–4.0, red <3.5, grey no match) |
 | **No match** | Grey `?` badge with reason in tooltip |
-| **Click** | Opens Vivino wine page (does not follow the shop product link) |
+| **Click** | Score or wine name opens the Vivino page. The black glass icon opens Hong Kong prices on Wine-Searcher. Neither follows the shop product link. |
 
 Per-retailer placement is configured via `BadgeAdapter` on each `RetailerAdapter` (see `src/adapters/`).
 

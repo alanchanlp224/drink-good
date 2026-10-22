@@ -1,11 +1,11 @@
-# Drink Good v0.0.11
+# Drink Good v0.0.14
 
 Chrome extension that overlays **Vivino scores and matched wine names** on supported wine shop product listings.
 
 ## Download
 
 1. Open **[Releases](https://github.com/alanchanlp224/drink-good/releases)** on GitHub.
-2. Click the **latest release** at the top (this release: **v0.0.11**).
+2. Click the **latest release** at the top (this release: **v0.0.14**).
 3. Scroll to **Assets**.
 4. Click **`drink-good.zip`** to download.
 5. Follow the [installation guide in README](https://github.com/alanchanlp224/drink-good#install-drink-good-chrome) (macOS and Windows).
@@ -26,14 +26,21 @@ Chrome extension that overlays **Vivino scores and matched wine names** on suppo
 | Wine Couple | [winecouple.hk](https://www.winecouple.hk/) |
 | Ginsberg+Chan | [ginsbergchan.com](https://ginsbergchan.com/) |
 | Cote d'Or Fine Wines | [cotedorfinewines.com](https://cotedorfinewines.com/) |
+| VinoBuzz | [vinobuzz.ai](https://vinobuzz.ai/marketplace) |
 
-Visit a supported shop, click the **burgundy wine-glass button** (bottom-right), and Vivino badges appear on product cards.
+Visit a supported shop, click the **burgundy wine-glass button** (bottom-right), and Vivino badges appear on product cards. Click the score or wine name to open the Vivino match. The black glass icon on a matched badge opens Hong Kong prices for that wine on Wine-Searcher.
 
-## What's new in v0.0.11
+## What's new in v0.0.14
 
-### Cote d'Or Fine Wines support
-- New retailer adapter for [cotedorfinewines.com](https://cotedorfinewines.com/) (Flatsome product grid + product pages).
-- Case sizes such as `6x75cl` are removed before Vivino search so the match uses the wine name and vintage.
+### Wine-Searcher prices
+- Matched badges include a black wine-glass icon. It opens a Hong Kong Wine-Searcher search for the Vivino wine name and vintage. The score and name still open Vivino.
+
+### VinoBuzz support
+- New retailer adapter for [vinobuzz.ai/marketplace](https://vinobuzz.ai/marketplace) (masonry wine cards and product pages).
+
+### Shops added since v0.0.8
+- Wine Couple, Ginsberg+Chan, and Cote d'Or Fine Wines.
+- Cote d'Or case sizes such as `6x75cl` are removed before Vivino search so the match uses the wine name and vintage.
 
 ## Upgrading from an earlier release
 
@@ -49,4 +56,4 @@ Or download `drink-good.zip` again and overwrite the same folder manually.
 
 ## Full changelog
 
-https://github.com/alanchanlp224/drink-good/compare/v0.0.10...v0.0.11
+https://github.com/alanchanlp224/drink-good/compare/v0.0.8...v0.0.14
